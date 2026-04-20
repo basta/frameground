@@ -1,32 +1,14 @@
-import { BaseBoxShapeUtil, HTMLContainer, useEditor, useIsEditing } from 'tldraw'
-import { HTML_FRAME_TYPE } from './HtmlFrameShape'
-import type { HtmlFrameShape } from './HtmlFrameShape'
-import { useCallback, useRef } from 'react'
+import { memo, useCallback, useRef } from 'react'
+import { NodeResizer, useReactFlow, type NodeProps } from '@xyflow/react'
+import type { HtmlFrameData } from './HtmlFrameShape'
 
 const TITLE_BAR_HEIGHT = 32
 
-export class HtmlFrameShapeUtil extends BaseBoxShapeUtil<HtmlFrameShape> {
-  static override type = HTML_FRAME_TYPE as const
-
-  getDefaultProps(): HtmlFrameShape['props'] {
-    return { w: 800, h: 600, name: 'Untitled', url: '' }
-  }
-
-  override canEdit() { return true }
-
-  component(shape: HtmlFrameShape) {
-    return <HtmlFrameComponent shape={shape} />
-  }
-
-  indicator(shape: HtmlFrameShape) {
-    return <rect width={shape.props.w} height={shape.props.h + TITLE_BAR_HEIGHT} rx={8} />
-  }
-}
-
-function HtmlFrameComponent({ shape }: { shape: HtmlFrameShape }) {
-  const editor = useEditor()
-  const isEditing = useIsEditing(shape.id)
+function HtmlFrameNodeComponent({ id, data, selected }: NodeProps) {
+  const { setNodes } = useReactFlow()
   const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  const frameData = data as unknown as HtmlFrameData
 
   const handleRefresh = useCallback(() => {
     if (iframeRef.current) {
@@ -35,18 +17,21 @@ function HtmlFrameComponent({ shape }: { shape: HtmlFrameShape }) {
   }, [])
 
   const handleEditName = useCallback(() => {
-    const newName = prompt('Frame name:', shape.props.name)
+    const newName = prompt('Frame name:', frameData.name)
     if (newName !== null) {
-      editor.updateShapes([{ id: shape.id, type: HTML_FRAME_TYPE, props: { name: newName } }])
+      setNodes(nds => nds.map(n =>
+        n.id === id ? { ...n, data: { ...n.data, name: newName } } : n
+      ))
     }
-  }, [editor, shape.id, shape.props.name])
+  }, [id, frameData.name, setNodes])
 
   return (
-    <HTMLContainer>
+    <>
+      <NodeResizer isVisible={!!selected} minWidth={200} minHeight={150} />
       <div
         style={{
-          width: shape.props.w,
-          height: shape.props.h + TITLE_BAR_HEIGHT,
+          width: '100%',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 8,
@@ -80,7 +65,7 @@ function HtmlFrameComponent({ shape }: { shape: HtmlFrameShape }) {
               whiteSpace: 'nowrap',
             }}
           >
-            {shape.props.name}
+            {frameData.name}
           </span>
           <button
             onClick={handleRefresh}
@@ -100,17 +85,19 @@ function HtmlFrameComponent({ shape }: { shape: HtmlFrameShape }) {
         </div>
         <iframe
           ref={iframeRef}
-          src={shape.props.url}
+          src={frameData.url}
           sandbox="allow-scripts allow-same-origin"
           style={{
             width: '100%',
             flex: 1,
             border: 'none',
-            pointerEvents: isEditing ? 'auto' : 'none',
+            pointerEvents: frameData.editMode ? 'auto' : 'none',
             background: '#fff',
           }}
         />
       </div>
-    </HTMLContainer>
+    </>
   )
 }
+
+export const HtmlFrameNode = memo(HtmlFrameNodeComponent)

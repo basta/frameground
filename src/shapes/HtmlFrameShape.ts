@@ -1,12 +1,11 @@
-import type { TLBaseShape } from '@tldraw/tlschema'
+import type { Node } from '@xyflow/react'
 
 export const HTML_FRAME_TYPE = 'html-frame' as const
 
-export type HtmlFrameShapeProps = {
-  w: number
-  h: number
+export type HtmlFrameData = {
   name: string
   url: string
+  editMode: boolean
 }
 
-export type HtmlFrameShape = TLBaseShape<typeof HTML_FRAME_TYPE, HtmlFrameShapeProps>
+export type HtmlFrameNode = Node<HtmlFrameData, typeof HTML_FRAME_TYPE>

@@ -1,42 +1,38 @@
-import { useEditor, createShapeId } from 'tldraw'
 import { useEffect } from 'react'
+import type { Node } from '@xyflow/react'
 import { loadManifest } from '../lib/manifest'
 import { HTML_FRAME_TYPE } from '../shapes/HtmlFrameShape'
 
-export function useFrameSync() {
-  const editor = useEditor()
+type SetNodes = React.Dispatch<React.SetStateAction<Node[]>>
 
+export function useFrameSync(setNodes: SetNodes) {
   useEffect(() => {
     async function sync() {
       const manifest = await loadManifest()
-      const existingIds = new Set(
-        editor.getCurrentPageShapes()
-          .filter(s => s.type === HTML_FRAME_TYPE)
-          .map(s => s.id)
-      )
 
-      const toCreate = manifest.frames
-        .filter(entry => !existingIds.has(createShapeId(entry.id)))
-        .map(entry => ({
-          id: createShapeId(entry.id),
-          type: HTML_FRAME_TYPE as const,
-          x: entry.x,
-          y: entry.y,
-          props: {
-            w: entry.w,
-            h: entry.h,
-            name: entry.name,
-            url: `/frames/${entry.file}`,
-          },
-        }))
+      setNodes(current => {
+        const existingIds = new Set(current.map(n => n.id))
+        const toCreate = manifest.frames
+          .filter(entry => !existingIds.has(entry.id))
+          .map(entry => ({
+            id: entry.id,
+            type: HTML_FRAME_TYPE,
+            position: { x: entry.x, y: entry.y },
+            style: { width: entry.w, height: entry.h + 32 },
+            data: {
+              name: entry.name,
+              url: `/frames/${entry.file}`,
+              editMode: false,
+            },
+          }))
 
-      if (toCreate.length > 0) {
-        editor.createShapes(toCreate)
-      }
+        if (toCreate.length === 0) return current
+        return [...current, ...toCreate]
+      })
     }
 
     sync()
     const interval = setInterval(sync, 3000)
     return () => clearInterval(interval)
-  }, [editor])
+  }, [setNodes])
 }
