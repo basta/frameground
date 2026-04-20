@@ -1,8 +1,31 @@
 {
   "name": "opendesign",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "A Figma-like canvas for HTML. Each frame is a self-contained HTML file that syncs two-way between canvas and disk. Designed to be driven by AI coding agents.",
   "type": "module",
+  "license": "MIT",
+  "author": "basta <jsembasta@gmail.com>",
+  "homepage": "https://github.com/basta/OpenDesign#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/basta/OpenDesign.git"
+  },
+  "bugs": {
+    "url": "https://github.com/basta/OpenDesign/issues"
+  },
+  "keywords": [
+    "design-tool",
+    "canvas",
+    "html",
+    "figma",
+    "react-flow",
+    "xyflow",
+    "ai-agents",
+    "claude-code"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

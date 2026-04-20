@@ -1,73 +1,106 @@
-# React + TypeScript + Vite
+# OpenDesign
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Figma-like canvas for HTML. Each frame is a self-contained HTML file; you drag them around, resize them, and edit them from either the canvas or your text editor — changes sync both ways.
 
-Currently, two official plugins are available:
+Designed to be driven by AI coding agents: describe a screen, get a live frame on the canvas within ~100ms.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Built on React, [`@xyflow/react`](https://reactflow.dev), and Vite. One repo, one dev server, no database.
 
-## React Compiler
+## Why
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Existing design tools store your work in a proprietary format. OpenDesign stores each frame as a plain HTML file on disk. That means:
 
-## Expanding the ESLint configuration
+- Your favorite AI coding agent can create, edit, and port frames directly — no plugin API, no headless browser.
+- Frames render real code. What you see on the canvas is what ships.
+- Everything is diff-able, `git`-able, and greppable.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Quickstart
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/basta/OpenDesign.git
+cd OpenDesign
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open <http://localhost:5173>. Create a project, then describe a frame to your agent.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+**Custom projects root:**
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+PROJECTS_ROOT=/path/to/your/projects npm run dev
 ```
+
+Defaults to `./projects/` (gitignored).
+
+## How it works
+
+**Projects** are directories under `PROJECTS_ROOT`. Each project contains:
+
+```
+<project-id>/
+  PROJECT.md                 project idea + frames list
+  DESIGN.md                  committed aesthetic direction
+  design-reference.html      auto-generated live view of DESIGN.md
+  frames.json                [{ id, name, file }]
+  .opendesign/layout.json    { [frameId]: { x, y, w, h } }
+  <frame-id>.html            one file per frame, fully self-contained
+```
+
+**Frames** are single HTML files with inline CSS/JS — no build step, no external deps (unless you want them). The canvas renders them via iframes.
+
+**Two-way sync**: the dev server watches the filesystem with `chokidar` and streams change events over SSE. Edits in the canvas hit the HTTP API and are echoed back as events. Edits on disk (from your editor, or from an agent writing files directly) show up on the canvas within ~100ms.
+
+## HTTP API
+
+Mounted at `/api` on the dev server.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/workspace` | List projects root + project paths |
+| `GET` / `POST` | `/api/projects` | List / create projects |
+| `GET` | `/api/projects/:id/manifest` | Read `frames.json` |
+| `GET` | `/api/projects/:id/layout` | Read `.opendesign/layout.json` |
+| `POST` | `/api/projects/:id/frames` | Create frame (writes HTML + manifest + layout atomically) |
+| `PATCH` | `/api/projects/:id/frames/:frameId` | Rename / change file |
+| `DELETE` | `/api/projects/:id/frames/:frameId[?deleteFile=true]` | Delete frame |
+| `PATCH` | `/api/projects/:id/layout/:frameId` | Move / resize |
+| `GET` | `/api/projects/:id/events` | SSE stream of filesystem changes |
+
+Frame HTML is served at `/frames/:projectId/:file` for iframe loading.
+
+## Skills for AI agents
+
+Three [Claude Code](https://claude.ai/code) skills live in `.claude/skills/` (mirrored in `skills/`):
+
+- **`/frame`** — create or update a single frame. Reads `PROJECT.md`/`DESIGN.md`, picks a non-overlapping position, writes the HTML, and updates the manifest.
+- **`/frontend-design`** — design advisor. Commits a project to a bold aesthetic direction (typography, color, motion, composition). Invoked by `/frame` for fresh projects; can also be used standalone.
+- **`/port`** — port an existing codebase into an OpenDesign project, one frame per screen. Explores the source, extracts aesthetic signals, seeds `PROJECT.md`/`DESIGN.md`, then spawns parallel subagents to port each screen. Supports `--redesign` (fresh direction) and `--append` (extend existing project).
+
+Other coding agents should work too — the skills are just markdown describing how to hit the HTTP API.
+
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start the dev server (canvas + API + file watcher) |
+| `npm run build` | Type-check and build for production |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run the server test suite (Vitest) |
+
+## Project layout
+
+```
+src/              React app (canvas, pages, hooks, node types)
+server/           Vite plugin: HTTP API + chokidar watcher + SSE
+.claude/skills/   Claude Code skills (frame, frontend-design, port)
+skills/           Mirror of the above (for discoverability)
+```
+
+## Contributing
+
+Issues and PRs welcome. Run `npm run lint` and `npm run test` before opening a PR. CI runs the same checks on every push.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
