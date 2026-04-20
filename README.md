@@ -4,7 +4,7 @@ A Figma-like canvas for HTML. Each frame is a self-contained HTML file; you drag
 
 Designed to be driven by AI coding agents: describe a screen, get a live frame on the canvas.
 
-Built on React, [`@xyflow/react`](https://reactflow.dev), and Vite. One repo, one dev server, no database.
+Built on React, [`@xyflow/react`](https://reactflow.dev), and Vite.
 
 ![OpenDesign canvas](docs/canvas.png)
 
