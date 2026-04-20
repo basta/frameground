@@ -6,8 +6,11 @@ Designed to be driven by AI coding agents: describe a screen, get a live frame o
 
 Built on React, [`@xyflow/react`](https://reactflow.dev), and Vite.
 
-![OpenDesign canvas](docs/canvas.png)
-![Invoking the /frame skill in Claude Code](docs/skill-invocation.png)
+<p align="center">
+  <img src="docs/canvas.png" alt="OpenDesign canvas" />
+  <br />
+  <img src="docs/skill-invocation.png" alt="Invoking the /frame skill in Claude Code" />
+</p>
 
 ## Why
 
