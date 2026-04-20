@@ -1,6 +1,7 @@
 import { memo, useCallback, useRef } from 'react'
 import { NodeResizer, useReactFlow, type NodeProps } from '@xyflow/react'
 import type { HtmlFrameData } from './HtmlFrameShape'
+import { patchFrame } from '../lib/api'
 
 const TITLE_BAR_HEIGHT = 32
 
@@ -11,19 +12,19 @@ function HtmlFrameNodeComponent({ id, data, selected }: NodeProps) {
   const frameData = data as unknown as HtmlFrameData
 
   const handleRefresh = useCallback(() => {
-    if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src
-    }
+    iframeRef.current?.contentWindow?.location.reload()
   }, [])
 
   const handleEditName = useCallback(() => {
     const newName = prompt('Frame name:', frameData.name)
-    if (newName !== null) {
-      setNodes(nds => nds.map(n =>
-        n.id === id ? { ...n, data: { ...n.data, name: newName } } : n
-      ))
+    if (newName === null || newName === frameData.name) return
+    setNodes(nds => nds.map(n =>
+      n.id === id ? { ...n, data: { ...n.data, name: newName } } : n
+    ))
+    if (frameData.projectId) {
+      patchFrame(frameData.projectId, id, { name: newName }).catch(() => {})
     }
-  }, [id, frameData.name, setNodes])
+  }, [id, frameData.name, frameData.projectId, setNodes])
 
   return (
     <>

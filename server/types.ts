@@ -16,5 +16,3 @@ export interface LayoutEntry {
 }
 
 export type Layout = Record<string, LayoutEntry>
-
-export const DEFAULT_LAYOUT: LayoutEntry = { x: 200, y: 200, w: 800, h: 600 }

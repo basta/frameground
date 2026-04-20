@@ -4,26 +4,56 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is this
 
-OpenDesign is a Figma-like design tool built on React Flow (`@xyflow/react`). The canvas hosts "frames" — each frame renders a self-contained HTML file via an iframe. Frames are defined in a JSON manifest and synced to the canvas automatically.
+OpenDesign is a Figma-like design tool built on React Flow (`@xyflow/react`). The canvas hosts "frames" — each frame renders a self-contained HTML file via an iframe. Work is organized into **projects**; each project is a subdirectory under `PROJECTS_ROOT` with its own manifest, layout, and frames.
 
-The intended workflow: the user describes a frame, Claude creates the HTML file and updates the manifest, and it appears on the canvas within seconds.
+The intended workflow: the user describes a frame, Claude posts it to the OpenDesign HTTP API, and it appears on the canvas within ~100ms.
 
 ## Commands
 
 - `npm run dev` — start dev server (default: http://localhost:5173)
 - `npm run build` — type-check and build for production
 - `npm run lint` — run ESLint
-- `npx tsc --noEmit` — type-check only
-- `FRAMES_DIR=/path/to/project npm run dev` — serve frames from an external directory
+- `npx tsc -b` — type-check only
+- `PROJECTS_ROOT=/path/to/root npm run dev` — point projects root at a custom location (default `./projects`)
 
 ## Architecture
 
-**Custom node system**: `HtmlFrameNode` is a custom React Flow node type (`html-frame`). It renders an iframe with a title bar (name + refresh button). Double-click enters edit mode, enabling iframe interaction. Defined in `src/shapes/HtmlFrameNode.tsx`, typed in `src/shapes/HtmlFrameShape.ts`.
+**Routing**: `/` shows the project picker; `/p/:projectId` shows the canvas for a project. Defined in `src/App.tsx` with pages in `src/pages/`.
 
-**Manifest-driven sync**: `useFrameSync` hook polls `/frames/frames.json` every 3 seconds. It uses manifest entry IDs directly as node IDs, so it only creates nodes that don't already exist (user-repositioned frames are preserved). It never deletes nodes from the canvas.
+**Custom node system**: `HtmlFrameNode` is a React Flow node type (`html-frame`) that renders an iframe with a title bar (name + refresh button). Double-click enters edit mode. Defined in `src/shapes/HtmlFrameNode.tsx`, typed in `src/shapes/HtmlFrameShape.ts`.
 
-**Frame serving**: `vite.config.ts` has a custom plugin that serves files from `FRAMES_DIR` (env var) at the `/frames/` path. Falls back to `public/frames/` if unset.
+**Two-way sync via SSE + HTTP**: `useFrameSync` (`src/hooks/useFrameSync.ts`) opens `/api/projects/:id/events` and reconciles on `manifest-changed`, `layout-changed`, and `file-changed` events. Canvas writes (drag, resize, rename, delete) go through the HTTP API (`src/lib/api.ts`). Server echoes come back as SSE and reconcile idempotently.
+
+**On-disk layout**:
+```
+PROJECTS_ROOT/
+  <project-id>/
+    frames.json           [{ id, name, file }]
+    .opendesign/layout.json   { [frameId]: { x, y, w, h } }
+    <frame-id>.html
+```
+Content identity lives in `frames.json`; volatile canvas state (position, size) lives in the sidecar. Keeps manifest git-friendly.
+
+**Server**: a Vite plugin (`server/plugin.ts`) serves the HTTP API and streams filesystem events via chokidar. Modules:
+- `server/projects.ts` — list/create/resolve projects under `PROJECTS_ROOT`
+- `server/manifest.ts` — atomic read/write of `frames.json`
+- `server/layout.ts` — atomic read/write of `.opendesign/layout.json`
+- `server/watcher.ts` — chokidar + SSE broadcast
+- `server/api.ts` — HTTP routing
+
+## HTTP API (mounted at `/api`)
+
+- `GET  /api/projects` / `POST /api/projects`
+- `GET  /api/projects/:id/manifest`
+- `GET  /api/projects/:id/layout`
+- `POST /api/projects/:id/frames` (creates frame: writes HTML + manifest entry + layout seed)
+- `PATCH /api/projects/:id/frames/:frameId` (rename, change file)
+- `DELETE /api/projects/:id/frames/:frameId[?deleteFile=true]`
+- `PATCH /api/projects/:id/layout/:frameId` (x, y, w, h)
+- `GET  /api/projects/:id/events` — SSE stream
+
+Frame HTML is served at `/frames/:projectId/:file` for iframe `src` loading.
 
 ## Skill: `/frame`
 
-The `/frame` skill (defined in `skills/frame.md` and `.claude/skills/frame/SKILL.md`) handles creating frames. It writes a self-contained HTML file and updates `frames.json` in the project directory. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested).
+The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame.md`) handles creating frames. It prefers POSTing to the API when the dev server is up; falls back to direct file edits otherwise. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested).
