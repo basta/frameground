@@ -50,11 +50,13 @@ function ensureChannel(projectId: string): Channel {
   const emitManifest = debounce(() => broadcast(projectId, 'manifest-changed', {}), DEBOUNCE_MS)
   const emitLayout = debounce(() => broadcast(projectId, 'layout-changed', {}), DEBOUNCE_MS)
   const emitFile = debounce((frameId: string) => broadcast(projectId, 'file-changed', { frameId }), DEBOUNCE_MS)
+  const emitDesign = debounce(() => broadcast(projectId, 'design-changed', {}), DEBOUNCE_MS)
 
   const onChange = (p: string) => {
     const rel = path.relative(dir, p)
     if (rel === 'frames.json') emitManifest()
     else if (rel === path.join('.opendesign', 'layout.json')) emitLayout()
+    else if (rel === 'DESIGN.md') emitDesign()
     else if (rel.endsWith('.html')) emitFile(path.basename(rel, '.html'))
   }
 

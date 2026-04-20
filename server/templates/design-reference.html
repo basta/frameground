@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Design Reference</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1a1a1a;
+    --muted: #8a8a85;
+    --border: #e5e5e0;
+    --accent: #1a1a1a;
+    --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", Palatino, serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.6 var(--serif);
+    padding: 56px 64px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+  }
+  .eyebrow {
+    font: 10px/1 var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  h1 { font-size: 44px; font-weight: normal; letter-spacing: -0.02em; line-height: 1; }
+  .status {
+    font: 10px/1 var(--mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #3a9a3a; display: inline-block;
+  }
+  section { margin-bottom: 56px; }
+  section h2 {
+    font: 11px/1 var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+  }
+  section h2 .idx {
+    color: var(--border);
+  }
+  .prose p { margin-bottom: 10px; }
+  .prose strong { font-weight: 600; }
+  .prose em { font-style: italic; }
+  .prose ul { padding-left: 18px; margin-bottom: 10px; }
+  .prose li { margin-bottom: 4px; }
+  .prose code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: rgba(0,0,0,0.05);
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+  .todo {
+    color: var(--muted);
+    font-style: italic;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    padding: 14px 18px;
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+  }
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .swatch {
+    aspect-ratio: 4/3;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.08);
+    display: flex;
+    align-items: flex-end;
+    padding: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .swatch-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: rgba(255,255,255,0.92);
+    color: #000;
+    padding: 3px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(4px);
+  }
+  .font-specimen {
+    margin-top: 20px;
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: #fff;
+  }
+  .font-name {
+    font: 10px/1 var(--mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .font-sample-lg {
+    font-size: 52px;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+  .font-sample-md { font-size: 18px; color: var(--muted); }
+  .font-alpha { font-size: 15px; color: var(--muted); margin-top: 8px; font-feature-settings: "tnum"; }
+  .empty {
+    padding: 48px;
+    text-align: center;
+    color: var(--muted);
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    font-style: italic;
+  }
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font: 10px/1.4 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <div class="eyebrow">Design Reference</div>
+      <h1>Design Language</h1>
+    </div>
+    <div class="status" id="status"><span class="dot"></span>Live</div>
+  </header>
+  <main id="content"></main>
+  <footer>
+    <span>Generated from DESIGN.md</span>
+    <span id="updated"></span>
+  </footer>
+</div>
+<script>
+(function () {
+  var projectId = location.pathname.split('/')[2]
+  var contentEl = document.getElementById('content')
+  var updatedEl = document.getElementById('updated')
+
+  function esc(s) {
+    return s.replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+    })
+  }
+
+  function parseSections(md) {
+    var sections = []
+    var lines = md.split('\n')
+    var current = null
+    var buf = []
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/^## (.+)$/)
+      if (m) {
+        if (current) sections.push({ title: current, body: buf.join('\n').trim() })
+        current = m[1].trim()
+        buf = []
+      } else {
+        buf.push(lines[i])
+      }
+    }
+    if (current) sections.push({ title: current, body: buf.join('\n').trim() })
+    return sections
+  }
+
+  function isTodo(body) {
+    if (!body) return true
+    var lines = body.split('\n').map(function (l) { return l.trim() }).filter(Boolean)
+    if (lines.length === 0) return true
+    return lines.every(function (l) { return /^TODO\b/i.test(l) || /^TODO:/i.test(l) })
+  }
+
+  function renderInline(s) {
+    return esc(s)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+  }
+
+  function renderMarkdown(text) {
+    var lines = text.split('\n')
+    var html = ''
+    var inList = false
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i]
+      if (/^\s*[-*]\s+/.test(line)) {
+        if (!inList) { html += '<ul>'; inList = true }
+        html += '<li>' + renderInline(line.replace(/^\s*[-*]\s+/, '')) + '</li>'
+      } else {
+        if (inList) { html += '</ul>'; inList = false }
+        if (line.trim()) html += '<p>' + renderInline(line) + '</p>'
+      }
+    }
+    if (inList) html += '</ul>'
+    return html
+  }
+
+  function extractHexColors(text) {
+    var hexes = []
+    var seen = {}
+    var re = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b/g
+    var m
+    while ((m = re.exec(text)) !== null) {
+      var h = m[0]
+      if (!seen[h.toLowerCase()]) { seen[h.toLowerCase()] = true; hexes.push(h) }
+    }
+    return hexes
+  }
+
+  function extractFonts(text) {
+    var fonts = []
+    var seen = {}
+    function add(name) {
+      var n = name.trim().replace(/,.*$/, '').trim()
+      if (!n || n.length > 48) return
+      if (/^(serif|sans-serif|monospace|system-ui|ui-monospace|ui-serif|ui-sans-serif|display|body|heading|mono|regular|italic|bold|light|medium|inherit|initial|unset)$/i.test(n)) return
+      if (!/[A-Za-z]/.test(n)) return
+      if (seen[n.toLowerCase()]) return
+      seen[n.toLowerCase()] = true
+      fonts.push(n)
+    }
+    var re1 = /`([^`\n]+)`/g
+    var m
+    while ((m = re1.exec(text)) !== null) {
+      var name = m[1].trim()
+      if (/^[A-Z][A-Za-z0-9][A-Za-z0-9 ]*$/.test(name)) add(name)
+    }
+    var re2 = /(?:\*\*)?(?:Display|Body|Heading|Headline|Mono|Monospace|Text|Serif|Sans)(?:\*\*)?\s*[:\-–—]\s*([A-Z][A-Za-z0-9 ]+?)(?=[,.\n(]|$)/g
+    while ((m = re2.exec(text)) !== null) add(m[1])
+    return fonts
+  }
+
+  var fontLoaded = {}
+  function loadGoogleFont(name) {
+    if (fontLoaded[name]) return
+    fontLoaded[name] = true
+    var link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(name).replace(/%20/g, '+') + ':ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap'
+    document.head.appendChild(link)
+  }
+
+  function renderColorExtras(body) {
+    var hexes = extractHexColors(body)
+    if (!hexes.length) return ''
+    var swatches = hexes.map(function (h) {
+      return '<div class="swatch" style="background:' + h + '"><span class="swatch-label">' + h + '</span></div>'
+    }).join('')
+    return '<div class="swatches">' + swatches + '</div>'
+  }
+
+  function renderTypographyExtras(body) {
+    var fonts = extractFonts(body)
+    if (!fonts.length) return ''
+    fonts.forEach(loadGoogleFont)
+    return fonts.map(function (f) {
+      var style = "font-family: '" + f.replace(/'/g, "\\'") + "', serif"
+      return (
+        '<div class="font-specimen">' +
+          '<div class="font-name"><span>' + esc(f) + '</span><span>Aa</span></div>' +
+          '<div class="font-sample-lg" style="' + style + '">The quick brown fox jumps over the lazy dog</div>' +
+          '<div class="font-sample-md" style="' + style + '">Regular body text, 18px.</div>' +
+          '<div class="font-alpha" style="' + style + '">Abcdefghijklmnopqrstuvwxyz &middot; 0123456789</div>' +
+        '</div>'
+      )
+    }).join('')
+  }
+
+  function render(sections) {
+    if (!sections.length) {
+      contentEl.innerHTML = '<div class="empty">DESIGN.md has no sections yet.</div>'
+      return
+    }
+    contentEl.innerHTML = sections.map(function (s, i) {
+      var todo = isTodo(s.body)
+      var extras = ''
+      if (!todo) {
+        if (/colou?r/i.test(s.title)) extras = renderColorExtras(s.body)
+        else if (/typograph/i.test(s.title)) extras = renderTypographyExtras(s.body)
+      }
+      var idx = String(i + 1).padStart(2, '0')
+      return (
+        '<section>' +
+          '<h2><span>' + esc(s.title) + '</span><span class="idx">' + idx + '</span></h2>' +
+          (todo
+            ? '<div class="todo">Not yet defined</div>'
+            : '<div class="prose">' + renderMarkdown(s.body) + '</div>') +
+          extras +
+        '</section>'
+      )
+    }).join('')
+  }
+
+  async function load() {
+    try {
+      var res = await fetch('DESIGN.md', { cache: 'no-store' })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      var md = await res.text()
+      render(parseSections(md))
+      var now = new Date()
+      updatedEl.textContent = 'Updated ' + now.toLocaleTimeString()
+    } catch (e) {
+      contentEl.innerHTML = '<div class="empty">Could not load DESIGN.md (' + esc(String(e.message || e)) + ')</div>'
+    }
+  }
+
+  load()
+
+  try {
+    var es = new EventSource('/api/projects/' + encodeURIComponent(projectId) + '/events')
+    es.addEventListener('design-changed', load)
+  } catch (e) {
+    // SSE unavailable — manual refresh via the title bar still works.
+  }
+})()
+</script>
+</body>
+</html>

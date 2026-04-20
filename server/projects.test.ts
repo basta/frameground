@@ -64,12 +64,35 @@ describe('projectsRoot / ensureRoot', () => {
 })
 
 describe('createProject', () => {
-  test('creates dir, frames.json, layout.json', () => {
+  test('creates dir, frames.json, layout.json, PROJECT.md, DESIGN.md, design-reference.html', () => {
     createProject('demo')
     const dir = path.join(tmp, 'demo')
     expect(fs.existsSync(dir)).toBe(true)
-    expect(JSON.parse(fs.readFileSync(path.join(dir, 'frames.json'), 'utf-8'))).toEqual({ frames: [] })
-    expect(JSON.parse(fs.readFileSync(path.join(dir, '.opendesign', 'layout.json'), 'utf-8'))).toEqual({})
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'frames.json'), 'utf-8'))
+    expect(manifest.frames).toHaveLength(1)
+    expect(manifest.frames[0]).toEqual({
+      id: 'design-reference',
+      name: 'Design reference',
+      file: 'design-reference.html',
+    })
+
+    const layout = JSON.parse(fs.readFileSync(path.join(dir, '.opendesign', 'layout.json'), 'utf-8'))
+    expect(layout['design-reference']).toEqual({ x: 200, y: 200, w: 1200, h: 900 })
+
+    const designHtml = fs.readFileSync(path.join(dir, 'design-reference.html'), 'utf-8')
+    expect(designHtml).toContain('<!DOCTYPE html>')
+    expect(designHtml).toContain('DESIGN.md')
+
+    const projectMd = fs.readFileSync(path.join(dir, 'PROJECT.md'), 'utf-8')
+    expect(projectMd).toContain('# Project')
+    expect(projectMd).toContain('Design reference')
+    expect(projectMd).toContain('TODO')
+
+    const designMd = fs.readFileSync(path.join(dir, 'DESIGN.md'), 'utf-8')
+    expect(designMd).toContain('# Design Language')
+    expect(designMd).toContain('Aesthetic Direction')
+    expect(designMd).toContain('TODO')
   })
 
   test('throws on invalid id', () => {

@@ -128,16 +128,20 @@ describe('POST /api/projects', () => {
 describe('manifest + layout GET', () => {
   beforeEach(createDemo)
 
-  test('GET manifest returns empty frames', async () => {
+  test('GET manifest returns the seeded design-reference frame', async () => {
     const res = await fetch(`${baseUrl}/api/projects/demo/manifest`)
     expect(res.status).toBe(200)
-    expect(await getJson(res)).toEqual({ frames: [] })
+    expect(await getJson(res)).toEqual({
+      frames: [{ id: 'design-reference', name: 'Design reference', file: 'design-reference.html' }],
+    })
   })
 
-  test('GET layout returns empty object', async () => {
+  test('GET layout returns seeded design-reference entry', async () => {
     const res = await fetch(`${baseUrl}/api/projects/demo/layout`)
     expect(res.status).toBe(200)
-    expect(await getJson(res)).toEqual({})
+    expect(await getJson(res)).toEqual({
+      'design-reference': { x: 200, y: 200, w: 1200, h: 900 },
+    })
   })
 
   test('GET manifest 404s on missing project', async () => {
@@ -169,7 +173,8 @@ describe('POST /api/projects/:id/frames', () => {
     expect(body.layout).toEqual({ x: 100, y: 200, w: 400, h: 300 })
 
     const manifestRes = await fetch(`${baseUrl}/api/projects/demo/manifest`)
-    expect((await getJson(manifestRes)).frames).toEqual([{ id: 'hello', name: 'Hello', file: 'hello.html' }])
+    const manifestBody = await getJson(manifestRes)
+    expect(manifestBody.frames).toContainEqual({ id: 'hello', name: 'Hello', file: 'hello.html' })
 
     const layoutRes = await fetch(`${baseUrl}/api/projects/demo/layout`)
     expect((await getJson(layoutRes)).hello).toEqual({ x: 100, y: 200, w: 400, h: 300 })
@@ -276,8 +281,8 @@ describe('DELETE /api/projects/:id/frames/:frameId', () => {
     expect(res.status).toBe(200)
     const manifest = await getJson(await fetch(`${baseUrl}/api/projects/demo/manifest`))
     const layout = await getJson(await fetch(`${baseUrl}/api/projects/demo/layout`))
-    expect(manifest.frames).toEqual([])
-    expect(layout).toEqual({})
+    expect(manifest.frames.map((f: { id: string }) => f.id)).not.toContain('a')
+    expect(layout).not.toHaveProperty('a')
     expect(fs.existsSync(path.join(tmp, 'demo', 'a.html'))).toBe(true)
   })
 

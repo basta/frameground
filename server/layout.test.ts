@@ -18,6 +18,9 @@ beforeEach(() => {
   prevRoot = process.env.PROJECTS_ROOT
   process.env.PROJECTS_ROOT = tmp
   createProject('demo')
+  // Reset layout to empty — createProject seeds the design-reference frame,
+  // but these tests verify layout module behavior in isolation.
+  writeLayout('demo', {})
 })
 
 afterEach(() => {

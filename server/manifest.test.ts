@@ -19,6 +19,9 @@ beforeEach(() => {
   prevRoot = process.env.PROJECTS_ROOT
   process.env.PROJECTS_ROOT = tmp
   createProject('demo')
+  // Reset manifest to empty — createProject seeds the design-reference frame,
+  // but these tests verify manifest module behavior in isolation.
+  writeManifest('demo', { frames: [] })
 })
 
 afterEach(() => {

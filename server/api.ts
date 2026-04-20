@@ -231,6 +231,7 @@ export function handleFrames(req: IncomingMessage, res: ServerResponse): boolean
     : ext === '.js' ? 'application/javascript'
     : ext === '.json' ? 'application/json'
     : ext === '.svg' ? 'image/svg+xml'
+    : ext === '.md' ? 'text/markdown; charset=utf-8'
     : 'application/octet-stream'
   res.setHeader('Content-Type', type)
   res.setHeader('Cache-Control', 'no-cache')

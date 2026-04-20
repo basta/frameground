@@ -28,11 +28,14 @@ The intended workflow: the user describes a frame, Claude posts it to the OpenDe
 ```
 PROJECTS_ROOT/
   <project-id>/
-    frames.json           [{ id, name, file }]
-    .opendesign/layout.json   { [frameId]: { x, y, w, h } }
+    PROJECT.md             project idea + frames list
+    DESIGN.md              committed aesthetic direction (drives the frontend-design skill)
+    design-reference.html  auto-generated frame that renders DESIGN.md visually
+    frames.json            [{ id, name, file }]
+    .opendesign/layout.json    { [frameId]: { x, y, w, h } }
     <frame-id>.html
 ```
-Content identity lives in `frames.json`; volatile canvas state (position, size) lives in the sidecar. Keeps manifest git-friendly.
+Content identity lives in `frames.json`; volatile canvas state (position, size) lives in the sidecar. Keeps manifest git-friendly. `PROJECT.md` and `DESIGN.md` are seeded with TODO placeholders on project creation and maintained by the `frame` skill. `design-reference.html` is seeded alongside them and registered as a frame — it fetches `DESIGN.md` at runtime, renders swatches/type specimens/etc., and auto-refreshes via SSE when DESIGN.md changes.
 
 **Server**: a Vite plugin (`server/plugin.ts`) serves the HTTP API and streams filesystem events via chokidar. Modules:
 - `server/projects.ts` — list/create/resolve projects under `PROJECTS_ROOT`
@@ -56,4 +59,8 @@ Frame HTML is served at `/frames/:projectId/:file` for iframe `src` loading.
 
 ## Skill: `/frame`
 
-The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame.md`) handles creating frames. It prefers POSTing to the API when the dev server is up; falls back to direct file edits otherwise. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested).
+The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame.md`) handles creating frames. It prefers POSTing to the API when the dev server is up; falls back to direct file edits otherwise. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested). It reads `PROJECT.md`/`DESIGN.md` before creating a frame and updates them after.
+
+## Skill: `/frontend-design`
+
+The `/frontend-design` skill (defined in `.claude/skills/frontend-design/SKILL.md` and `skills/frontend-design.md`) is the design advisor the `frame` skill delegates aesthetic decisions to. It commits a project to a bold aesthetic direction (typography, color, motion, composition, backgrounds) and can also be invoked directly when designing anything outside the frame flow.
