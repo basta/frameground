@@ -64,3 +64,7 @@ The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame
 ## Skill: `/frontend-design`
 
 The `/frontend-design` skill (defined in `.claude/skills/frontend-design/SKILL.md` and `skills/frontend-design.md`) is the design advisor the `frame` skill delegates aesthetic decisions to. It commits a project to a bold aesthetic direction (typography, color, motion, composition, backgrounds) and can also be invoked directly when designing anything outside the frame flow.
+
+## Skill: `/port`
+
+The `/port` skill (defined in `.claude/skills/port/SKILL.md` and `skills/port.md`) ports an existing app's screens into a new OpenDesign project in one shot — one frame per screen. It launches an Explore subagent to identify screens and extract aesthetic signals, writes populated `PROJECT.md`/`DESIGN.md`, then spawns parallel porting subagents that POST each frame via the HTTP API. Frames are inlined snapshots meant for redesign; no round-trip back to the source app. Supports `--redesign` (commits a fresh direction via `/frontend-design`) and `--append` (extend an existing project).
