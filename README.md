@@ -6,6 +6,8 @@ Designed to be driven by AI coding agents: describe a screen, get a live frame o
 
 Built on React, [`@xyflow/react`](https://reactflow.dev), and Vite. One repo, one dev server, no database.
 
+![OpenDesign canvas](docs/canvas.png)
+
 ## Why
 
 Existing design tools store your work in a proprietary format. OpenDesign stores each frame as a plain HTML file on disk. That means:
@@ -70,6 +72,8 @@ Mounted at `/api` on the dev server.
 Frame HTML is served at `/frames/:projectId/:file` for iframe loading.
 
 ## Skills for AI agents
+
+![Invoking the /frame skill in Claude Code](docs/skill-invocation.png)
 
 Three [Claude Code](https://claude.ai/code) skills live in `.claude/skills/` (mirrored in `skills/`):
 
