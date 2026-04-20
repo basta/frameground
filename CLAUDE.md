@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## What is this
 
 OpenDesign is a Figma-like design tool built on React Flow (`@xyflow/react`). The canvas hosts "frames" — each frame renders a self-contained HTML file via an iframe. Work is organized into **projects**; each project is a subdirectory under `PROJECTS_ROOT` with its own manifest, layout, and frames.
@@ -59,7 +55,7 @@ Frame HTML is served at `/frames/:projectId/:file` for iframe `src` loading.
 
 ## Skill: `/frame`
 
-The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame.md`) handles creating frames. It prefers POSTing to the API when the dev server is up; falls back to direct file edits otherwise. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested). It reads `PROJECT.md`/`DESIGN.md` before creating a frame and updates them after.
+The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame.md`) handles creating frames. It prefers to edit the .html/.json/.md files directly, can use API as fallback.; falls back to direct file edits otherwise. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested). It reads `PROJECT.md`/`DESIGN.md` before creating a frame and updates them after.
 
 ## Skill: `/frontend-design`
 
