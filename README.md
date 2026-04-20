@@ -7,6 +7,7 @@ Designed to be driven by AI coding agents: describe a screen, get a live frame o
 Built on React, [`@xyflow/react`](https://reactflow.dev), and Vite.
 
 ![OpenDesign canvas](docs/canvas.png)
+![Invoking the /frame skill in Claude Code](docs/skill-invocation.png)
 
 ## Why
 
@@ -27,7 +28,6 @@ npm run dev
 
 Open <http://localhost:5173>. Create a project, then describe a frame to your agent.
 
-![Invoking the /frame skill in Claude Code](docs/skill-invocation.png)
 
 **Custom projects root:**
 
@@ -75,15 +75,22 @@ Frame HTML is served at `/frames/:projectId/:file` for iframe loading.
 
 ## Skills for AI agents
 
-![Invoking the /frame skill in Claude Code](docs/skill-invocation.png)
-
 Three [Claude Code](https://claude.ai/code) skills live in `.claude/skills/` (mirrored in `skills/`):
 
 - **`/frame`** — create or update a single frame. Reads `PROJECT.md`/`DESIGN.md`, picks a non-overlapping position, writes the HTML, and updates the manifest.
 - **`/frontend-design`** — design advisor. Commits a project to a bold aesthetic direction (typography, color, motion, composition). Invoked by `/frame` for fresh projects; can also be used standalone.
 - **`/port`** — port an existing codebase into an OpenDesign project, one frame per screen. Explores the source, extracts aesthetic signals, seeds `PROJECT.md`/`DESIGN.md`, then spawns parallel subagents to port each screen. Supports `--redesign` (fresh direction) and `--append` (extend existing project).
 
-Other coding agents should work too — the skills are just markdown describing how to hit the HTTP API.
+The same skills are mirrored for other CLI coding agents so you can use whichever you prefer:
+
+| Agent | Project instructions | Slash commands |
+|-------|----------------------|----------------|
+| [Claude Code](https://claude.ai/code) | `CLAUDE.md` | `.claude/skills/<name>/SKILL.md` |
+| [opencode](https://opencode.ai) | `AGENTS.md` | `.opencode/commands/<name>.md` |
+| [Codex](https://developers.openai.com/codex) | `AGENTS.md` | — (custom prompts deprecated; relies on `AGENTS.md`) |
+| [Gemini CLI](https://geminicli.com) | `GEMINI.md` | `.gemini/commands/<name>.toml` |
+
+`AGENTS.md` and `GEMINI.md` are symlinks to `CLAUDE.md`, and `.opencode/commands/*.md` are symlinks to the Claude `SKILL.md` files — they stay in sync automatically. The Gemini TOML files are hand-maintained copies because the format differs.
 
 ## Scripts
 
