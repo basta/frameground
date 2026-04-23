@@ -2,7 +2,7 @@
 name: frame
 description: Create or update an HTML frame on the OpenDesign canvas. Use when the user asks to create a screen, page, component, or frame for their app.
 argument-hint: [project] [description of what the frame should show]
-allowed-tools: Read Write Edit Bash(curl *) Bash(ls *) Glob
+allowed-tools: Read Write Edit Bash(curl *) Bash(ls *) Bash(node ./node_modules/@google/design.md/*) Glob
 ---
 
 # Create or update an OpenDesign Frame
@@ -46,12 +46,12 @@ Use the `path` field from the response — don't guess paths.
 
 ## Step 2: Read project docs
 
-Read `<project-path>/PROJECT.md` and `<project-path>/DESIGN.md`. If either is missing (older project), create it from the template the server uses for new projects.
+Read `<project-path>/PROJECT.md`, `<project-path>/DESIGN.md`, and `<project-path>/FEEL.md`. If any is missing (older project), create it from the template the server uses for new projects. DESIGN.md holds spec-compliant tokens + canonical prose; FEEL.md holds motion, spatial composition, and background/texture prose.
 
-DESIGN.md drives the frame's aesthetic. Two cases:
+DESIGN.md and FEEL.md together drive the frame's aesthetic. Two cases:
 
-- **DESIGN.md is populated** (real values, not `TODO`): treat it as law. Aesthetic direction, fonts, colors, motion, and composition rules are fixed for this project. Stay consistent.
-- **DESIGN.md is still all `TODO`** (first frame for this project, or no one has committed yet): **HARD STOP — do not write any HTML yet.** The first frame commits the aesthetic for every future frame in this project; you don't get to pick it silently. Follow the "First-frame protocol" in Step 4 before proceeding. Write the committed choices into DESIGN.md in Step 8 *before* any subsequent frames read it.
+- **Design is populated** (real tokens and prose, not `TODO`): treat it as law. Aesthetic direction, fonts, colors, motion, and composition rules are fixed for this project. Stay consistent.
+- **Design is unfilled** — token maps in DESIGN.md's front-matter (`colors`, `typography`, `rounded`, `spacing`, `components`) are all empty (`{}`), and the prose sections in both DESIGN.md and FEEL.md start with `TODO:`. **HARD STOP — do not write any HTML yet.** The first frame commits the aesthetic for every future frame in this project; you don't get to pick it silently. Follow the "First-frame protocol" in Step 4 before proceeding. Write the committed choices into DESIGN.md and FEEL.md in Step 8 *before* any subsequent frames read them.
 
 PROJECT.md gives product context (concept, naming conventions, existing frames) that shapes what the frame should be and say.
 
@@ -73,7 +73,7 @@ The user says "wacky" / "clean" / "fun" / "modern" — that's a mood, not a dire
 2. Ask about theme preference (light / dark / either) and any must-have references (fonts, colors, apps they like, apps they *don't* want to look like).
 3. Use an interactive question tool if your harness provides one (`AskUserQuestion` in Claude Code); otherwise print a numbered list and **wait** for the reply. Do not start writing.
 4. If the user says "surprise me" / "just pick", commit the direction yourself — but still summarize it back in 2–3 lines and get a go-ahead before writing.
-5. Invoke the `frontend-design` skill with the user's answers to flesh out the specifics — distinctive font pair, hex palette, motion timings, composition rules, background/texture treatment.
+5. Invoke the `frontend-design` skill with the user's answers. It returns three artifacts per its Output Contract: (a) YAML tokens for DESIGN.md's front-matter, (b) DESIGN.md prose blurbs, (c) FEEL.md prose.
 
 Skipping this protocol because the user's phrasing sounds "confident enough" is how a project ends up with an aesthetic they never actually chose. Don't skip it.
 
@@ -132,12 +132,29 @@ Tell the user the frame was created, the name, and that they can double-click it
 
 ## Step 8: Update project docs
 
-Keep PROJECT.md and DESIGN.md in sync:
+Keep PROJECT.md, DESIGN.md, and FEEL.md in sync:
 
 - **PROJECT.md** — add a line under `## Frames`: `- **<name>** — <one-sentence purpose>`. Replace the `_(none yet)_` placeholder the first time. If `## Concept` is still `TODO` and the user's intent is now clear, fill it in.
-- **DESIGN.md** — if this was the first frame (or the relevant section was still `TODO`), write the committed choices in. Be specific: font names with weights, hex colors, spacing scale, motion timings. If you introduced a new reusable component, document it under `## Components`. Leave genuinely-undefined sections as `TODO` — don't invent a design system the user hasn't asked for.
+- **DESIGN.md** — edit in two places when the relevant section was still unfilled:
+  1. **Front-matter** (YAML between `---` fences at the top). Replace empty maps with real tokens per the `frontend-design` Output Contract. Use the Edit tool on the literal YAML text; empty maps like `colors: {}` are unique anchors. Match 2-space indentation.
+  2. **Prose sections** (Overview through Do's and Don'ts): replace each `TODO:` with a short paragraph per the Output Contract.
+- **FEEL.md** — replace `TODO:` in Motion, Spatial Composition, and Backgrounds & Textures with the prose from the `frontend-design` skill's third artifact. Leave genuinely undefined sections as `TODO:`.
 
-Both are plain markdown. Use the Edit tool. The server does not need to be notified.
+Leave genuinely undefined groups as empty maps and `TODO:` bodies — don't invent a design system the user hasn't asked for. Use the Edit tool. The server does not need to be notified.
+
+## Step 9: Lint DESIGN.md (advisory)
+
+After updating DESIGN.md, run the `@google/design.md` linter against it:
+
+```bash
+node ./node_modules/@google/design.md/dist/index.js lint <project-path>/DESIGN.md --format json
+```
+
+(Invoke via `node` directly rather than `npx` — the CLI's bin name `design.md` collides with the `.md` file extension on Windows and can misfire.)
+
+Parse the JSON output. Surface `error`-severity findings verbatim so the user can fix them (broken token refs, etc.). Warnings and info are noise — mention only if the user asked for a strict review. **Never roll back a frame because lint complained** — lint is advisory.
+
+FEEL.md is not linted; it's freeform prose.
 
 ## HTTP API reference
 

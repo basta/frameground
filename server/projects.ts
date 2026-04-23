@@ -29,28 +29,71 @@ TODO
 - **Design reference** — live view of the project's design language (from DESIGN.md).
 `
 
-const DESIGN_MD_TEMPLATE = `# Design Language
+const DESIGN_MD_TEMPLATE = `---
+version: alpha
+name: TODO
+description: TODO one-line description of this project's aesthetic commitment.
+colors: {}
+typography: {}
+rounded: {}
+spacing: {}
+components: {}
+---
+
+# Design Language
 
 TODO: the committed aesthetic direction for this project. Every frame must follow it.
-Frames are built via the \`frontend-design\` skill — its guidance defines what goes
-in each section below. The first frame in this project commits these choices.
+Frames are built via the \`frontend-design\` skill — it emits tokens (front-matter above)
+plus the prose below. The first frame in this project commits these choices.
 
-## Aesthetic Direction
+The structured tokens in this file are authoritative. Project-specific prose about
+motion, spatial composition, and background/texture treatment lives in FEEL.md.
+
+## Overview
 
 TODO: one bold, specific tone (e.g. brutalist/raw, editorial/magazine, retro-futuristic,
 organic/natural, luxury/refined, maximalist chaos). No hedging — pick one.
 
+## Colors
+
+TODO: describe the palette intent. Hex values live in the \`colors\` front-matter.
+
 ## Typography
 
-TODO: a distinctive display font + a refined body font. Not Inter, Roboto, Arial, or system fonts.
+TODO: describe the type pairing intent (distinctive display + refined body).
+Not Inter, Roboto, Arial, or system fonts. Values live in the \`typography\` front-matter.
 
-## Color & Theme
+## Layout
 
-TODO: dominant color(s) + sharp accents. Light or dark theme. CSS variables preferred.
+TODO: spacing scale rationale. Values live in \`spacing\` front-matter.
+
+## Elevation & Depth
+
+TODO: how depth is expressed — shadows, rims, layered transparencies, or none.
+
+## Shapes
+
+TODO: corner radii intent. Values live in \`rounded\` front-matter.
+
+## Components
+
+TODO: reusable component patterns as they emerge. Structured values live in
+\`components\` front-matter.
+
+## Do's and Don'ts
+
+TODO: short bullets of what the aesthetic requires and what it forbids.
+`
+
+const FEEL_MD_TEMPLATE = `# Feel
+
+How this project moves, occupies space, and treats atmosphere. Frame implementations
+must follow these rules alongside the tokens in DESIGN.md.
 
 ## Motion
 
-TODO: motion language — entrance choreography, hover behavior, scroll interactions.
+TODO: motion language — entrance choreography, hover behavior, scroll interactions,
+durations, easings.
 
 ## Spatial Composition
 
@@ -59,10 +102,6 @@ TODO: grid vs. asymmetry, density vs. negative space, overlap/diagonal flow rule
 ## Backgrounds & Textures
 
 TODO: atmospheric treatment — gradient meshes, noise, grain, patterns, shadows, etc.
-
-## Components
-
-TODO: reusable component patterns as they emerge (buttons, cards, inputs, nav).
 `
 
 export function projectsRoot(): string {
@@ -112,6 +151,7 @@ export function createProject(id: string): void {
   fs.writeFileSync(path.join(dir, '.opendesign', 'layout.json'), JSON.stringify(layout, null, 2))
   fs.writeFileSync(path.join(dir, 'PROJECT.md'), PROJECT_MD_TEMPLATE)
   fs.writeFileSync(path.join(dir, 'DESIGN.md'), DESIGN_MD_TEMPLATE)
+  fs.writeFileSync(path.join(dir, 'FEEL.md'), FEEL_MD_TEMPLATE)
   fs.writeFileSync(path.join(dir, DESIGN_REFERENCE.file), DESIGN_REFERENCE_HTML)
 }
 

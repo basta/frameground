@@ -64,7 +64,7 @@ describe('projectsRoot / ensureRoot', () => {
 })
 
 describe('createProject', () => {
-  test('creates dir, frames.json, layout.json, PROJECT.md, DESIGN.md, design-reference.html', () => {
+  test('creates dir, frames.json, layout.json, PROJECT.md, DESIGN.md, FEEL.md, design-reference.html', () => {
     createProject('demo')
     const dir = path.join(tmp, 'demo')
     expect(fs.existsSync(dir)).toBe(true)
@@ -90,9 +90,27 @@ describe('createProject', () => {
     expect(projectMd).toContain('TODO')
 
     const designMd = fs.readFileSync(path.join(dir, 'DESIGN.md'), 'utf-8')
+    expect(designMd).toMatch(/^---\r?\n/)
+    expect(designMd).toContain('version: alpha')
+    expect(designMd).toContain('colors: {}')
+    expect(designMd).toContain('typography: {}')
     expect(designMd).toContain('# Design Language')
-    expect(designMd).toContain('Aesthetic Direction')
-    expect(designMd).toContain('TODO')
+    expect(designMd).toContain('## Overview')
+    expect(designMd).toContain('## Colors')
+    expect(designMd).toContain('## Typography')
+    expect(designMd).toContain('## Layout')
+    expect(designMd).toContain("## Do's and Don'ts")
+    expect(designMd).not.toContain('## Motion')
+    expect(designMd).not.toContain('## Spatial Composition')
+    expect(designMd).not.toContain('## Backgrounds')
+    expect(designMd).toContain('TODO:')
+
+    const feelMd = fs.readFileSync(path.join(dir, 'FEEL.md'), 'utf-8')
+    expect(feelMd).toContain('# Feel')
+    expect(feelMd).toContain('## Motion')
+    expect(feelMd).toContain('## Spatial Composition')
+    expect(feelMd).toContain('## Backgrounds & Textures')
+    expect(feelMd).toContain('TODO:')
   })
 
   test('throws on invalid id', () => {

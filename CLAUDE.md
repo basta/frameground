@@ -25,18 +25,20 @@ The intended workflow: the user describes a frame, Claude posts it to the OpenDe
 PROJECTS_ROOT/
   <project-id>/
     PROJECT.md             project idea + frames list
-    DESIGN.md              committed aesthetic direction (drives the frontend-design skill)
-    design-reference.html  auto-generated frame that renders DESIGN.md visually
+    DESIGN.md              spec-compliant design tokens + canonical prose (Google design.md spec)
+    FEEL.md                project-specific prose for motion, spatial composition, backgrounds
+    design-reference.html  auto-generated frame that renders DESIGN.md + FEEL.md visually
     frames.json            [{ id, name, file }]
     .opendesign/layout.json    { [frameId]: { x, y, w, h } }
     <frame-id>.html
 ```
-Content identity lives in `frames.json`; volatile canvas state (position, size) lives in the sidecar. Keeps manifest git-friendly. `PROJECT.md` and `DESIGN.md` are seeded with TODO placeholders on project creation and maintained by the `frame` skill. `design-reference.html` is seeded alongside them and registered as a frame — it fetches `DESIGN.md` at runtime, renders swatches/type specimens/etc., and auto-refreshes via SSE when DESIGN.md changes.
+Content identity lives in `frames.json`; volatile canvas state (position, size) lives in the sidecar. Keeps manifest git-friendly. `PROJECT.md`, `DESIGN.md`, and `FEEL.md` are seeded with TODO placeholders on project creation and maintained by the `frame` skill. `DESIGN.md` follows Google's [`design.md`](https://github.com/google-labs-code/design.md) spec — YAML front-matter tokens (colors, typography, rounded, spacing, components) plus canonical prose sections. `FEEL.md` holds the non-token creative dimensions the spec doesn't cover. `design-reference.html` fetches structured design data from `/api/projects/:id/design` and auto-refreshes via SSE when either file changes.
 
 **Server**: a Vite plugin (`server/plugin.ts`) serves the HTTP API and streams filesystem events via chokidar. Modules:
 - `server/projects.ts` — list/create/resolve projects under `PROJECTS_ROOT`
 - `server/manifest.ts` — atomic read/write of `frames.json`
 - `server/layout.ts` — atomic read/write of `.opendesign/layout.json`
+- `server/design.ts` — parse `DESIGN.md` front-matter + read `FEEL.md`
 - `server/watcher.ts` — chokidar + SSE broadcast
 - `server/api.ts` — HTTP routing
 
@@ -45,6 +47,7 @@ Content identity lives in `frames.json`; volatile canvas state (position, size) 
 - `GET  /api/projects` / `POST /api/projects`
 - `GET  /api/projects/:id/manifest`
 - `GET  /api/projects/:id/layout`
+- `GET  /api/projects/:id/design` (parsed DESIGN.md tokens + sections, plus FEEL.md)
 - `POST /api/projects/:id/frames` (creates frame: writes HTML + manifest entry + layout seed)
 - `PATCH /api/projects/:id/frames/:frameId` (rename, change file)
 - `DELETE /api/projects/:id/frames/:frameId[?deleteFile=true]`
@@ -55,7 +58,7 @@ Frame HTML is served at `/frames/:projectId/:file` for iframe `src` loading.
 
 ## Skill: `/frame`
 
-The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame.md`) handles creating frames. It prefers to edit the .html/.json/.md files directly, can use API as fallback.; falls back to direct file edits otherwise. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested). It reads `PROJECT.md`/`DESIGN.md` before creating a frame and updates them after.
+The `/frame` skill (defined in `.claude/skills/frame/SKILL.md` and `skills/frame.md`) handles creating frames. It prefers to edit the .html/.json/.md files directly, can use API as fallback.; falls back to direct file edits otherwise. Frame HTML files must be fully self-contained (inline CSS/JS, no external deps unless requested). It reads `PROJECT.md`, `DESIGN.md`, and `FEEL.md` before creating a frame, updates them after, and runs an advisory lint (`@google/design.md lint`) against DESIGN.md.
 
 ## Skill: `/frontend-design`
 
@@ -63,4 +66,4 @@ The `/frontend-design` skill (defined in `.claude/skills/frontend-design/SKILL.m
 
 ## Skill: `/port`
 
-The `/port` skill (defined in `.claude/skills/port/SKILL.md` and `skills/port.md`) ports an existing app's screens into a new OpenDesign project in one shot — one frame per screen. It launches an Explore subagent to identify screens and extract aesthetic signals, writes populated `PROJECT.md`/`DESIGN.md`, then spawns parallel porting subagents that POST each frame via the HTTP API. Frames are inlined snapshots meant for redesign; no round-trip back to the source app. Supports `--redesign` (commits a fresh direction via `/frontend-design`) and `--append` (extend an existing project).
+The `/port` skill (defined in `.claude/skills/port/SKILL.md` and `skills/port.md`) ports an existing app's screens into a new OpenDesign project in one shot — one frame per screen. It launches an Explore subagent to identify screens and extract aesthetic signals, writes populated `PROJECT.md` / `DESIGN.md` / `FEEL.md`, then spawns parallel porting subagents that POST each frame via the HTTP API. Frames are inlined snapshots meant for redesign; no round-trip back to the source app. Supports `--redesign` (commits a fresh direction via `/frontend-design`) and `--append` (extend an existing project).

@@ -4,6 +4,7 @@ import path from 'path'
 import { createProject, listProjects, projectDir, projectExists, projectsRoot, resolveFrameFile, validProjectId } from './projects.ts'
 import { appendFrame, patchFrame, readManifest, removeFrame } from './manifest.ts'
 import { patchLayoutEntry, readLayout, removeLayoutEntry } from './layout.ts'
+import { readProjectDesign } from './design.ts'
 import { subscribe } from './watcher.ts'
 import type { FrameEntry, LayoutEntry } from './types.ts'
 
@@ -89,6 +90,15 @@ const routes: { method: string; pattern: RegExp; handler: Handler }[] = [
       const [, id] = m
       if (!projectExists(id)) return error(res, 404, 'Project not found')
       json(res, 200, readLayout(id))
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/projects\/([^/]+)\/design$/,
+    handler: (_req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      json(res, 200, readProjectDesign(id))
     },
   },
   {

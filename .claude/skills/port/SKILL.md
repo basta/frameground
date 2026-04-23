@@ -113,35 +113,80 @@ surface.>
 
 In `--append` mode, merge: keep existing bullets, add new-screen bullets, don't duplicate.
 
-### DESIGN.md — default (faithful) mode
+### DESIGN.md + FEEL.md — default (faithful) mode
 
-Translate Step 3's `aesthetic` into committed choices. Use the template from the `frontend-design` skill's output structure, but with concrete values drawn from the source — no invention:
+Translate Step 3's `aesthetic` into committed choices. Fill both files with concrete values drawn from the source — no invention.
+
+**DESIGN.md** (spec-compliant YAML front-matter + canonical prose):
 
 ```markdown
+---
+version: alpha
+name: <projectName>
+description: Faithful port of <sourcePath>.
+colors:
+  primary: "<observed hex>"
+  background: "<observed hex>"
+  text: "<observed hex>"
+  # add observed accents; omit keys you couldn't confirm
+typography:
+  body:
+    fontFamily: "<observed family>"
+    fontSize: "<observed base size, e.g. 16px>"
+    fontWeight: <observed weight>
+  # add display/mono/caption if observed in the source
+spacing: {}   # fill only if source has an obvious scale
+rounded: {}   # fill only if observed
+components: {} # fill only if reusable patterns observed
+---
+
 # Design Language
 
-Committed aesthetic for <projectName>, extracted from the source app at
-<sourcePath>. Every frame must follow it.
+Committed aesthetic for <projectName>, extracted from <sourcePath>.
 
-## Aesthetic Direction
+## Overview
 
 <One short paragraph characterizing the current look: e.g. "Clean utility-first
 SaaS — dense tabular layouts, neutral palette, minimal motion." Be honest:
 if it looks generic, say so; the user is here to redesign it.>
 
+## Colors
+
+<Prose about the palette, referencing the tokens above with source cues
+(e.g. "primary from Tailwind config in tailwind.config.ts").>
+
 ## Typography
 
-- Display: <font name, weights> — <source: e.g. "imported from Google Fonts in src/app/layout.tsx">
-- Body: <font name, weights>
+- Display: <font name, weights, source file> (if observed)
+- Body: <font name, weights, source file>
 - Base size: <from aesthetic.typographyScale, or "TODO" if not found>
 
-## Color & Theme
+## Layout
 
-- Theme: light | dark | both
-- Dominant: <hex>
-- Background: <hex>
-- Text: <hex>
-- Accents: <hex list>
+<Spacing observations. "TODO" if unclear.>
+
+## Elevation & Depth
+
+<Shadow/elevation observations. "TODO" if none.>
+
+## Shapes
+
+<Corner radius observations. "TODO" if none.>
+
+## Components
+
+<List reusable component patterns seen in the source: buttons, cards, inputs,
+nav. Keep names short.>
+
+## Do's and Don'ts
+
+TODO: capture any obvious conventions.
+```
+
+**FEEL.md** (motion, spatial composition, backgrounds — prose only):
+
+```markdown
+# Feel
 
 ## Motion
 
@@ -151,23 +196,18 @@ if it looks generic, say so; the user is here to redesign it.>
 ## Spatial Composition
 
 <Describe observed patterns: grid density, card layouts, hero treatments.
-"TODO" is acceptable if unclear.>
+"TODO" if unclear.>
 
 ## Backgrounds & Textures
 
 <Solid flat / subtle gradient / none / etc. "TODO" if unclear.>
-
-## Components
-
-<List reusable component patterns seen in the source: buttons, cards, inputs,
-nav. Keep names short.>
 ```
 
 Any section genuinely unknown → leave as `TODO`. **Don't invent a design system the source app doesn't have.** Faithful mode's whole point is to show the user their current reality so they can intentionally leave it.
 
-### DESIGN.md — `--redesign` mode
+### DESIGN.md + FEEL.md — `--redesign` mode
 
-Invoke the `frontend-design` skill to pick a bold, fresh direction for this app given its purpose (from Step 3's `concept`) and screens list. Write its output into DESIGN.md at `$PROJECT_PATH/DESIGN.md`. Screens in Step 5 will be ported with the original **content** (copy, structure, affordances) but re-skinned per the new DESIGN.md.
+Invoke the `frontend-design` skill to pick a bold, fresh direction for this app given its purpose (from Step 3's `concept`) and screens list. It returns three artifacts per its Output Contract. Paste (a) into DESIGN.md's front-matter (between the `---` fences), (b) over DESIGN.md's `TODO:` prose sections, and (c) over FEEL.md's `TODO:` sections. Screens in Step 5 will be ported with the original **content** (copy, structure, affordances) but re-skinned per the new DESIGN.md.
 
 ## Step 5: Port each screen (parallel subagents)
 
@@ -195,6 +235,13 @@ Layout: x=<x> y=<y> w=<w> h=<h>
 
 DESIGN.md (follow it exactly):
 <entire contents of DESIGN.md, inlined here>
+
+FEEL.md (follow it for motion, spatial composition, and backgrounds):
+<entire contents of FEEL.md, inlined here>
+
+The YAML front-matter at the top of DESIGN.md is authoritative for colors,
+typography, spacing, rounded, and components. In the HTML itself, expand
+`{colors.primary}`-style refs to concrete values or CSS variables.
 
 Your job:
 1. Read the listed source files (and anything they directly reference for this

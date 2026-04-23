@@ -56,7 +56,7 @@ function ensureChannel(projectId: string): Channel {
     const rel = path.relative(dir, p)
     if (rel === 'frames.json') emitManifest()
     else if (rel === path.join('.opendesign', 'layout.json')) emitLayout()
-    else if (rel === 'DESIGN.md') emitDesign()
+    else if (rel === 'DESIGN.md' || rel === 'FEEL.md') emitDesign()
     else if (rel.endsWith('.html')) emitFile(path.basename(rel, '.html'))
   }
 

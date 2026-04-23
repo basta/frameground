@@ -40,3 +40,71 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 **IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
 
 Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+
+## Output contract when called from the `frame` or `port` skill
+
+When invoked to seed or update an OpenDesign project's design files, return three artifacts the caller pastes in:
+
+**1. YAML front-matter for DESIGN.md** (goes between the `---` fences at the top). Fill all five token groups when possible. Follow Google's `design.md` spec — this shape is authoritative and gets linted.
+
+```yaml
+version: alpha
+name: <project name>
+description: <one line describing the committed aesthetic>
+colors:
+  primary: "#..."
+  surface: "#..."
+  text: "#..."
+  # accent(s), muted — whatever the aesthetic calls for
+typography:
+  display:
+    fontFamily: "<distinctive display font — NOT Inter/Roboto/Arial>"
+    fontSize: "<e.g. 56px>"
+    fontWeight: <number>
+    lineHeight: "<optional>"
+    letterSpacing: "<optional>"
+  body:
+    fontFamily: "<refined body font>"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: "1.5"
+spacing:
+  xs: "4px"
+  sm: "8px"
+  md: "16px"
+  lg: "32px"
+  xl: "64px"
+rounded:
+  none: "0"
+  sm: "4px"
+  md: "8px"
+  full: "9999px"
+components:
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.surface}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: "12px 20px"
+```
+
+Use `{colors.<name>}` / `{typography.<name>}` / `{rounded.<name>}` refs inside `components`; don't re-specify hex values there.
+
+**2. Markdown prose blurbs for DESIGN.md** — one short paragraph per section, in this canonical order:
+
+- `## Overview` — commit the tone in 1–2 sentences.
+- `## Colors` — *why* this palette.
+- `## Typography` — the pairing's voice.
+- `## Layout` — spacing rhythm rationale.
+- `## Elevation & Depth` — how depth is expressed.
+- `## Shapes` — corner rationale.
+- `## Components` — component voice/treatment.
+- `## Do's and Don'ts` — bullets starting with `DO` or `DON'T`.
+
+**3. Markdown prose for FEEL.md** — a separate file capturing the project's non-token dimensions:
+
+- `## Motion` — choreography, timings, easings.
+- `## Spatial Composition` — grid/asymmetry/density/flow.
+- `## Backgrounds & Textures` — atmospheric treatment.
+
+Return all three artifacts in one response. The caller handles pasting.

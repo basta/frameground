@@ -53,6 +53,15 @@
     width: 6px; height: 6px; border-radius: 50%;
     background: #3a9a3a; display: inline-block;
   }
+  .parse-error {
+    border: 1px solid #d4a017;
+    background: #fff9e6;
+    color: #7a5a00;
+    font: 12px/1.5 var(--mono);
+    padding: 12px 16px;
+    border-radius: 3px;
+    margin-bottom: 32px;
+  }
   section { margin-bottom: 56px; }
   section h2 {
     font: 11px/1 var(--mono);
@@ -101,10 +110,13 @@
     border-radius: 3px;
     border: 1px solid rgba(0,0,0,0.08);
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
     padding: 10px;
     position: relative;
     overflow: hidden;
+    gap: 4px;
   }
   .swatch-label {
     font-family: var(--mono);
@@ -115,6 +127,15 @@
     border-radius: 2px;
     letter-spacing: 0.02em;
     backdrop-filter: blur(4px);
+  }
+  .swatch-value {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: rgba(255,255,255,0.82);
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
   }
   .font-specimen {
     margin-top: 20px;
@@ -133,14 +154,114 @@
     justify-content: space-between;
   }
   .font-sample-lg {
-    font-size: 52px;
     line-height: 1.05;
-    letter-spacing: -0.01em;
     margin-bottom: 10px;
     word-break: break-word;
   }
-  .font-sample-md { font-size: 18px; color: var(--muted); }
+  .font-sample-md { color: var(--muted); }
   .font-alpha { font-size: 15px; color: var(--muted); margin-top: 8px; font-feature-settings: "tnum"; }
+  .scale-bars {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scale-bar {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .scale-bar-name { color: var(--fg); letter-spacing: 0.04em; }
+  .scale-bar-fill {
+    height: 14px;
+    background: var(--fg);
+    border-radius: 2px;
+  }
+  .scale-bar-value { color: var(--muted); text-align: right; }
+  .shape-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 20px;
+  }
+  .shape-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .shape-box {
+    width: 72px;
+    height: 72px;
+    background: var(--fg);
+  }
+  .shape-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .shape-meta strong { color: var(--fg); font-weight: 500; display: block; }
+  .component-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+  }
+  .component-card {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 20px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .component-name {
+    font: 10px/1 var(--mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .component-preview {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    align-self: flex-start;
+  }
+  .lede {
+    margin-bottom: 20px;
+    padding: 18px 20px;
+    border-left: 3px solid var(--fg);
+    background: #fff;
+  }
+  .lede-name {
+    font: 11px/1 var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg);
+    margin-bottom: 6px;
+  }
+  .lede-desc { color: var(--muted); font-size: 14px; }
+  .feel-divider {
+    margin: 64px 0 40px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .feel-divider .eyebrow { margin-bottom: 0; }
+  .feel-divider h2 {
+    font-size: 28px;
+    font-weight: normal;
+    letter-spacing: -0.01em;
+  }
   .empty {
     padding: 48px;
     text-align: center;
@@ -173,7 +294,7 @@
   </header>
   <main id="content"></main>
   <footer>
-    <span>Generated from DESIGN.md</span>
+    <span>Generated from DESIGN.md + FEEL.md</span>
     <span id="updated"></span>
   </footer>
 </div>
@@ -183,29 +304,24 @@
   var contentEl = document.getElementById('content')
   var updatedEl = document.getElementById('updated')
 
+  var CANONICAL_ORDER = [
+    'overview', 'colors', 'typography', 'layout',
+    'elevation & depth', 'shapes', 'components', "do's and don'ts"
+  ]
+
   function esc(s) {
-    return s.replace(/[&<>"]/g, function (c) {
+    return String(s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
     })
   }
 
-  function parseSections(md) {
-    var sections = []
-    var lines = md.split('\n')
-    var current = null
-    var buf = []
-    for (var i = 0; i < lines.length; i++) {
-      var m = lines[i].match(/^## (.+)$/)
-      if (m) {
-        if (current) sections.push({ title: current, body: buf.join('\n').trim() })
-        current = m[1].trim()
-        buf = []
-      } else {
-        buf.push(lines[i])
-      }
-    }
-    if (current) sections.push({ title: current, body: buf.join('\n').trim() })
-    return sections
+  function normalizeTitle(t) {
+    var s = String(t).toLowerCase().trim()
+    if (s === 'brand & style') return 'overview'
+    if (s === 'color') return 'colors'
+    if (s === 'layout & spacing') return 'layout'
+    if (s === 'elevation') return 'elevation & depth'
+    return s
   }
 
   function isTodo(body) {
@@ -213,6 +329,10 @@
     var lines = body.split('\n').map(function (l) { return l.trim() }).filter(Boolean)
     if (lines.length === 0) return true
     return lines.every(function (l) { return /^TODO\b/i.test(l) || /^TODO:/i.test(l) })
+  }
+
+  function isEmptyMap(v) {
+    return !v || typeof v !== 'object' || Array.isArray(v) || Object.keys(v).length === 0
   }
 
   function renderInline(s) {
@@ -240,112 +360,287 @@
     return html
   }
 
-  function extractHexColors(text) {
-    var hexes = []
-    var seen = {}
-    var re = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b/g
-    var m
-    while ((m = re.exec(text)) !== null) {
-      var h = m[0]
-      if (!seen[h.toLowerCase()]) { seen[h.toLowerCase()] = true; hexes.push(h) }
-    }
-    return hexes
-  }
-
-  function extractFonts(text) {
-    var fonts = []
-    var seen = {}
-    function add(name) {
-      var n = name.trim().replace(/,.*$/, '').trim()
-      if (!n || n.length > 48) return
-      if (/^(serif|sans-serif|monospace|system-ui|ui-monospace|ui-serif|ui-sans-serif|display|body|heading|mono|regular|italic|bold|light|medium|inherit|initial|unset)$/i.test(n)) return
-      if (!/[A-Za-z]/.test(n)) return
-      if (seen[n.toLowerCase()]) return
-      seen[n.toLowerCase()] = true
-      fonts.push(n)
-    }
-    var re1 = /`([^`\n]+)`/g
-    var m
-    while ((m = re1.exec(text)) !== null) {
-      var name = m[1].trim()
-      if (/^[A-Z][A-Za-z0-9][A-Za-z0-9 ]*$/.test(name)) add(name)
-    }
-    var re2 = /(?:\*\*)?(?:Display|Body|Heading|Headline|Mono|Monospace|Text|Serif|Sans)(?:\*\*)?\s*[:\-–—]\s*([A-Z][A-Za-z0-9 ]+?)(?=[,.\n(]|$)/g
-    while ((m = re2.exec(text)) !== null) add(m[1])
-    return fonts
-  }
-
   var fontLoaded = {}
   function loadGoogleFont(name) {
-    if (fontLoaded[name]) return
+    if (!name || fontLoaded[name]) return
     fontLoaded[name] = true
     var link = document.createElement('link')
     link.rel = 'stylesheet'
-    link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(name).replace(/%20/g, '+') + ':ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap'
+    link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(name).replace(/%20/g, '+') + ':ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap'
     document.head.appendChild(link)
   }
 
-  function renderColorExtras(body) {
-    var hexes = extractHexColors(body)
-    if (!hexes.length) return ''
-    var swatches = hexes.map(function (h) {
-      return '<div class="swatch" style="background:' + h + '"><span class="swatch-label">' + h + '</span></div>'
-    }).join('')
-    return '<div class="swatches">' + swatches + '</div>'
+  function resolveRef(val, tokens) {
+    if (typeof val !== 'string') return val
+    var m = val.match(/^\{([a-z]+)\.([A-Za-z0-9_-]+)\}$/)
+    if (!m) return val
+    var bucket = tokens[m[1]]
+    if (!bucket || typeof bucket !== 'object') return val
+    if (!(m[2] in bucket)) return val
+    return bucket[m[2]]
   }
 
-  function renderTypographyExtras(body) {
-    var fonts = extractFonts(body)
-    if (!fonts.length) return ''
-    fonts.forEach(loadGoogleFont)
-    return fonts.map(function (f) {
-      var style = "font-family: '" + f.replace(/'/g, "\\'") + "', serif"
+  function parseDim(v) {
+    if (typeof v === 'number') return { value: v, unit: 'px', css: v + 'px' }
+    if (typeof v !== 'string') return null
+    var m = v.match(/^(-?\d*\.?\d+)\s*(px|em|rem|%)?$/)
+    if (!m) return null
+    var num = parseFloat(m[1])
+    var unit = m[2] || 'px'
+    return { value: num, unit: unit, css: num + unit }
+  }
+
+  function dimPx(dim) {
+    if (!dim) return 0
+    if (dim.unit === 'px') return dim.value
+    if (dim.unit === 'em' || dim.unit === 'rem') return dim.value * 16
+    return dim.value
+  }
+
+  function renderLede(tokens) {
+    var name = tokens && typeof tokens.name === 'string' ? tokens.name.trim() : ''
+    var desc = tokens && typeof tokens.description === 'string' ? tokens.description.trim() : ''
+    var showName = name && !/^TODO/i.test(name)
+    var showDesc = desc && !/^TODO/i.test(desc)
+    if (!showName && !showDesc) return ''
+    return '<div class="lede">' +
+      (showName ? '<div class="lede-name">' + esc(name) + '</div>' : '') +
+      (showDesc ? '<div class="lede-desc">' + esc(desc) + '</div>' : '') +
+      '</div>'
+  }
+
+  function renderColors(colors) {
+    var keys = Object.keys(colors)
+    if (!keys.length) return ''
+    var html = keys.map(function (k) {
+      var v = colors[k]
+      if (typeof v !== 'string') return ''
+      return '<div class="swatch" style="background:' + esc(v) + '">' +
+        '<span class="swatch-label">' + esc(k) + '</span>' +
+        '<span class="swatch-value">' + esc(v) + '</span>' +
+        '</div>'
+    }).join('')
+    return '<div class="swatches">' + html + '</div>'
+  }
+
+  function renderTypography(typography) {
+    var keys = Object.keys(typography)
+    if (!keys.length) return ''
+    return keys.map(function (k) {
+      var t = typography[k] || {}
+      if (typeof t !== 'object') return ''
+      var family = typeof t.fontFamily === 'string' ? t.fontFamily : ''
+      var size = typeof t.fontSize === 'string' || typeof t.fontSize === 'number' ? t.fontSize : '28px'
+      var weight = t.fontWeight != null ? t.fontWeight : 400
+      var lh = t.lineHeight != null ? t.lineHeight : 1.1
+      var ls = t.letterSpacing != null ? t.letterSpacing : '0'
+      if (family) loadGoogleFont(family)
+      var style = [
+        family ? "font-family: '" + String(family).replace(/'/g, "\\'") + "', serif" : '',
+        'font-size: ' + (typeof size === 'number' ? size + 'px' : size),
+        'font-weight: ' + weight,
+        'line-height: ' + lh,
+        'letter-spacing: ' + ls,
+      ].filter(Boolean).join(';')
+      var alphaStyle = [
+        family ? "font-family: '" + String(family).replace(/'/g, "\\'") + "', serif" : '',
+        'font-weight: ' + weight,
+      ].filter(Boolean).join(';')
       return (
         '<div class="font-specimen">' +
-          '<div class="font-name"><span>' + esc(f) + '</span><span>Aa</span></div>' +
+          '<div class="font-name">' +
+            '<span>' + esc(k) + (family ? ' &middot; ' + esc(family) : '') + '</span>' +
+            '<span>' + esc(String(weight)) + '</span>' +
+          '</div>' +
           '<div class="font-sample-lg" style="' + style + '">The quick brown fox jumps over the lazy dog</div>' +
-          '<div class="font-sample-md" style="' + style + '">Regular body text, 18px.</div>' +
-          '<div class="font-alpha" style="' + style + '">Abcdefghijklmnopqrstuvwxyz &middot; 0123456789</div>' +
+          '<div class="font-sample-md" style="' + style + '">Regular body text sample.</div>' +
+          '<div class="font-alpha" style="' + alphaStyle + '">Abcdefghijklmnopqrstuvwxyz &middot; 0123456789</div>' +
         '</div>'
       )
     }).join('')
   }
 
-  function render(sections) {
-    if (!sections.length) {
-      contentEl.innerHTML = '<div class="empty">DESIGN.md has no sections yet.</div>'
-      return
-    }
-    contentEl.innerHTML = sections.map(function (s, i) {
-      var todo = isTodo(s.body)
-      var extras = ''
-      if (!todo) {
-        if (/colou?r/i.test(s.title)) extras = renderColorExtras(s.body)
-        else if (/typograph/i.test(s.title)) extras = renderTypographyExtras(s.body)
-      }
-      var idx = String(i + 1).padStart(2, '0')
-      return (
-        '<section>' +
-          '<h2><span>' + esc(s.title) + '</span><span class="idx">' + idx + '</span></h2>' +
-          (todo
-            ? '<div class="todo">Not yet defined</div>'
-            : '<div class="prose">' + renderMarkdown(s.body) + '</div>') +
-          extras +
-        '</section>'
-      )
+  function renderSpacing(spacing) {
+    var keys = Object.keys(spacing)
+    if (!keys.length) return ''
+    var dims = keys.map(function (k) { return { k: k, dim: parseDim(spacing[k]) } })
+      .filter(function (x) { return x.dim })
+    if (!dims.length) return ''
+    var maxPx = dims.reduce(function (m, x) { return Math.max(m, dimPx(x.dim)) }, 1)
+    var html = dims.map(function (x) {
+      var pct = Math.max(2, (dimPx(x.dim) / maxPx) * 100)
+      return '<div class="scale-bar">' +
+        '<span class="scale-bar-name">' + esc(x.k) + '</span>' +
+        '<span class="scale-bar-fill" style="width:' + pct + '%"></span>' +
+        '<span class="scale-bar-value">' + esc(x.dim.css) + '</span>' +
+        '</div>'
     }).join('')
+    return '<div class="scale-bars">' + html + '</div>'
+  }
+
+  function renderRounded(rounded) {
+    var keys = Object.keys(rounded)
+    if (!keys.length) return ''
+    var items = keys.map(function (k) {
+      var dim = parseDim(rounded[k])
+      var radius = dim ? dim.css : String(rounded[k])
+      var displayRadius = radius
+      if (dim && dim.value > 36) displayRadius = '50%'
+      return '<div class="shape-chip">' +
+        '<div class="shape-box" style="border-radius:' + esc(displayRadius) + '"></div>' +
+        '<div class="shape-meta"><strong>' + esc(k) + '</strong>' + esc(radius) + '</div>' +
+        '</div>'
+    }).join('')
+    return '<div class="shape-row">' + items + '</div>'
+  }
+
+  function renderComponents(components, tokens) {
+    var keys = Object.keys(components)
+    if (!keys.length) return ''
+    var items = keys.map(function (k) {
+      var c = components[k] || {}
+      if (typeof c !== 'object') return ''
+      var bg = resolveRef(c.backgroundColor, tokens)
+      var fg = resolveRef(c.textColor, tokens)
+      var typo = resolveRef(c.typography, tokens)
+      var rounded = resolveRef(c.rounded, tokens)
+      var roundedDim = parseDim(rounded)
+      var padding = c.padding != null ? String(c.padding) : '12px 20px'
+      var styles = []
+      if (typeof bg === 'string') styles.push('background:' + bg)
+      if (typeof fg === 'string') styles.push('color:' + fg)
+      styles.push('padding:' + padding)
+      if (roundedDim) styles.push('border-radius:' + roundedDim.css)
+      else if (typeof rounded === 'string') styles.push('border-radius:' + rounded)
+      if (typo && typeof typo === 'object') {
+        if (typeof typo.fontFamily === 'string') {
+          loadGoogleFont(typo.fontFamily)
+          styles.push("font-family:'" + String(typo.fontFamily).replace(/'/g, "\\'") + "', sans-serif")
+        }
+        if (typo.fontSize != null) styles.push('font-size:' + (typeof typo.fontSize === 'number' ? typo.fontSize + 'px' : typo.fontSize))
+        if (typo.fontWeight != null) styles.push('font-weight:' + typo.fontWeight)
+        if (typo.lineHeight != null) styles.push('line-height:' + typo.lineHeight)
+        if (typo.letterSpacing != null) styles.push('letter-spacing:' + typo.letterSpacing)
+      }
+      return '<div class="component-card">' +
+        '<div class="component-name">' + esc(k) + '</div>' +
+        '<div class="component-preview" style="' + styles.join(';') + '">' + esc(k.replace(/-/g, ' ')) + '</div>' +
+        '</div>'
+    }).join('')
+    return '<div class="component-grid">' + items + '</div>'
+  }
+
+  var SECTION_RENDERERS = {
+    'overview': function (tokens) { return renderLede(tokens) },
+    'colors': function (tokens) {
+      var c = tokens.colors
+      return (c && typeof c === 'object' && !Array.isArray(c)) ? renderColors(c) : ''
+    },
+    'typography': function (tokens) {
+      var t = tokens.typography
+      return (t && typeof t === 'object' && !Array.isArray(t)) ? renderTypography(t) : ''
+    },
+    'layout': function (tokens) {
+      var s = tokens.spacing
+      return (s && typeof s === 'object' && !Array.isArray(s)) ? renderSpacing(s) : ''
+    },
+    'shapes': function (tokens) {
+      var r = tokens.rounded
+      return (r && typeof r === 'object' && !Array.isArray(r)) ? renderRounded(r) : ''
+    },
+    'components': function (tokens) {
+      var c = tokens.components
+      return (c && typeof c === 'object' && !Array.isArray(c)) ? renderComponents(c, tokens) : ''
+    },
+  }
+
+  var TOKEN_SOURCE_FOR = {
+    'colors': 'colors',
+    'typography': 'typography',
+    'layout': 'spacing',
+    'shapes': 'rounded',
+    'components': 'components',
+  }
+
+  function renderSection(title, body, extras, idx, todo) {
+    var inner = ''
+    if (extras) inner += extras
+    if (!todo) inner += '<div class="prose">' + renderMarkdown(body) + '</div>'
+    if (!inner) inner = '<div class="todo">Not yet defined</div>'
+    var idxStr = String(idx + 1).padStart(2, '0')
+    return '<section>' +
+      '<h2><span>' + esc(title) + '</span><span class="idx">' + idxStr + '</span></h2>' +
+      inner +
+      '</section>'
+  }
+
+  function canonicalSections(sections) {
+    var byKey = {}
+    for (var i = 0; i < sections.length; i++) {
+      var key = normalizeTitle(sections[i].title)
+      if (!byKey[key]) byKey[key] = sections[i]
+    }
+    return byKey
+  }
+
+  function renderCanonical(design) {
+    var tokens = design.tokens || {}
+    var byKey = canonicalSections(design.sections || [])
+    var html = ''
+    for (var i = 0; i < CANONICAL_ORDER.length; i++) {
+      var key = CANONICAL_ORDER[i]
+      var section = byKey[key]
+      var title = section ? section.title : titleCase(key)
+      var body = section ? section.body : ''
+      var proseTodo = isTodo(body)
+      var tokenKey = TOKEN_SOURCE_FOR[key]
+      var tokenEmpty = !tokenKey || isEmptyMap(tokens[tokenKey])
+      var renderer = SECTION_RENDERERS[key]
+      var extras = renderer ? renderer(tokens) : ''
+      var todo = proseTodo && tokenEmpty && !extras
+      html += renderSection(title, body, extras, i, todo)
+    }
+    return html
+  }
+
+  function titleCase(s) {
+    return s.replace(/(^|[\s&'])\w/g, function (m) { return m.toUpperCase() })
+  }
+
+  function renderFeel(feel, startIdx) {
+    if (!feel || !feel.sections || !feel.sections.length) return ''
+    var html = '<div class="feel-divider">' +
+      '<div><div class="eyebrow">Feel</div><h2>Motion · Space · Atmosphere</h2></div>' +
+      '<div class="eyebrow">From FEEL.md</div>' +
+      '</div>'
+    for (var i = 0; i < feel.sections.length; i++) {
+      var s = feel.sections[i]
+      var todo = isTodo(s.body)
+      html += renderSection(s.title, s.body, '', startIdx + i, todo)
+    }
+    return html
+  }
+
+  function renderAll(data) {
+    var parts = []
+    if (data.parseError) {
+      parts.push('<div class="parse-error">Could not parse DESIGN.md front-matter: ' + esc(data.parseError) + '. Showing prose only.</div>')
+    }
+    parts.push(renderCanonical(data.design || { tokens: {}, sections: [] }))
+    parts.push(renderFeel(data.feel, CANONICAL_ORDER.length))
+    contentEl.innerHTML = parts.join('')
   }
 
   async function load() {
     try {
-      var res = await fetch('DESIGN.md', { cache: 'no-store' })
+      var res = await fetch('/api/projects/' + encodeURIComponent(projectId) + '/design', { cache: 'no-store' })
       if (!res.ok) throw new Error('HTTP ' + res.status)
-      var md = await res.text()
-      render(parseSections(md))
+      var data = await res.json()
+      renderAll(data)
       var now = new Date()
       updatedEl.textContent = 'Updated ' + now.toLocaleTimeString()
     } catch (e) {
-      contentEl.innerHTML = '<div class="empty">Could not load DESIGN.md (' + esc(String(e.message || e)) + ')</div>'
+      contentEl.innerHTML = '<div class="empty">Could not load design (' + esc(String(e.message || e)) + ')</div>'
     }
   }
 
