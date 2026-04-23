@@ -67,3 +67,7 @@ The `/frontend-design` skill (defined in `.claude/skills/frontend-design/SKILL.m
 ## Skill: `/port`
 
 The `/port` skill (defined in `.claude/skills/port/SKILL.md` and `skills/port.md`) ports an existing app's screens into a new OpenDesign project in one shot — one frame per screen. It launches an Explore subagent to identify screens and extract aesthetic signals, writes populated `PROJECT.md` / `DESIGN.md` / `FEEL.md`, then spawns parallel porting subagents that POST each frame via the HTTP API. Frames are inlined snapshots meant for redesign; no round-trip back to the source app. Supports `--redesign` (commits a fresh direction via `/frontend-design`) and `--append` (extend an existing project).
+
+## Skill: `/alternatives`
+
+The `/alternatives` skill (defined in `.claude/skills/alternatives/SKILL.md` and `skills/alternatives.md`) produces N parallel takes on a single frame so the user can compare side by side on the canvas. Auto-picks mode from DESIGN.md state — *execution*-shopping (layout/composition variants within the committed aesthetic) when filled, *direction*-shopping (each alt commits its own aesthetic) when empty. `--wild` forces direction-shopping regardless. Riffs on an existing frame when the user names its id; otherwise fresh. Gates on user approval of the proposed directions before dispatching parallel subagents, to avoid convergence. Exploratory by design — does not commit to DESIGN.md / FEEL.md / PROJECT.md and skips lint.
