@@ -38,7 +38,7 @@ Response:
 }
 ```
 
-Parse `$ARGUMENTS` — the first token should be the project name. If it's missing or doesn't match an existing project, ask the user which project to use (or list the options). The rest of `$ARGUMENTS` is the frame description.
+Parse `$ARGUMENTS` — the first token should be the project name. If it's missing or doesn't match an existing project, ask the user which project to use (or list the options). If they want a fresh project, create it via `POST /api/projects` — see "HTTP API reference" at the end of this doc. The rest of `$ARGUMENTS` is the frame description.
 
 Use the `path` field from the response — don't guess paths.
 
@@ -51,7 +51,7 @@ Read `<project-path>/PROJECT.md` and `<project-path>/DESIGN.md`. If either is mi
 DESIGN.md drives the frame's aesthetic. Two cases:
 
 - **DESIGN.md is populated** (real values, not `TODO`): treat it as law. Aesthetic direction, fonts, colors, motion, and composition rules are fixed for this project. Stay consistent.
-- **DESIGN.md is still all `TODO`** (this is the first frame, or no one has committed yet): invoke the `frontend-design` skill to make the hard choices — aesthetic direction, distinctive font pair, dominant-plus-accent palette, motion language, composition rules, background/texture treatment. Write those choices into DESIGN.md in Step 8 *before* any subsequent frames read it.
+- **DESIGN.md is still all `TODO`** (first frame for this project, or no one has committed yet): **HARD STOP — do not write any HTML yet.** The first frame commits the aesthetic for every future frame in this project; you don't get to pick it silently. Follow the "First-frame protocol" in Step 4 before proceeding. Write the committed choices into DESIGN.md in Step 8 *before* any subsequent frames read it.
 
 PROJECT.md gives product context (concept, naming conventions, existing frames) that shapes what the frame should be and say.
 
@@ -65,11 +65,25 @@ Read `<project-path>/.opendesign/layout.json` to see current positions and pick 
 
 ## Step 4: Write the HTML file
 
+### First-frame protocol (run this FIRST if DESIGN.md was all `TODO` in Step 2)
+
+The user says "wacky" / "clean" / "fun" / "modern" — that's a mood, not a direction. A dozen aesthetics fit each mood. Your job is to turn the mood into a committed direction **with the user's buy-in** before it becomes law for every future frame in this project.
+
+1. Surface 3–4 concrete aesthetic options to the user, tailored to the frame's purpose. Not "clean vs. bold" — name specific directions, e.g. "90s web-zine / sticker-bomb", "brutalist concrete", "editorial magazine", "retro-futuristic terminal", "Memphis pastel", "Swiss grid minimalism". For each option give one sentence of concrete cues (typography feel, color attitude, motion style).
+2. Ask about theme preference (light / dark / either) and any must-have references (fonts, colors, apps they like, apps they *don't* want to look like).
+3. Use an interactive question tool if your harness provides one (`AskUserQuestion` in Claude Code); otherwise print a numbered list and **wait** for the reply. Do not start writing.
+4. If the user says "surprise me" / "just pick", commit the direction yourself — but still summarize it back in 2–3 lines and get a go-ahead before writing.
+5. Invoke the `frontend-design` skill with the user's answers to flesh out the specifics — distinctive font pair, hex palette, motion timings, composition rules, background/texture treatment.
+
+Skipping this protocol because the user's phrasing sounds "confident enough" is how a project ends up with an aesthetic they never actually chose. Don't skip it.
+
+### Writing the frame
+
 Write `<project-path>/<id>.html`.
 
 Delegate the actual design and implementation to the `frontend-design` skill — it owns aesthetic decisions (typography, color, motion, composition, backgrounds). Feed it:
 - The frame's purpose (from the user's description, framed by PROJECT.md).
-- The committed aesthetic from DESIGN.md (or, if first frame, the direction you're about to commit).
+- The committed aesthetic from DESIGN.md.
 - The hard constraints below.
 
 Hard constraints (these override stylistic preferences):
@@ -124,6 +138,34 @@ Keep PROJECT.md and DESIGN.md in sync:
 - **DESIGN.md** — if this was the first frame (or the relevant section was still `TODO`), write the committed choices in. Be specific: font names with weights, hex colors, spacing scale, motion timings. If you introduced a new reusable component, document it under `## Components`. Leave genuinely-undefined sections as `TODO` — don't invent a design system the user hasn't asked for.
 
 Both are plain markdown. Use the Edit tool. The server does not need to be notified.
+
+## HTTP API reference
+
+**Always prefer direct file edits** for frame content, `frames.json`, and `.opendesign/layout.json` — single frame or many, create or update or delete. The dev server watches the filesystem and reconciles on its own. The canvas sees changes within ~100ms either way, and the diff stays reviewable.
+
+The HTTP API exists for **one thing** this skill can't do via files: creating a new project (the server has to bootstrap `PROJECT.md`, `DESIGN.md`, `design-reference.html`, and seed the manifest/layout — don't try to reproduce that by hand).
+
+### Discover workspace
+
+```bash
+curl -s http://localhost:5173/api/workspace
+# → { "root": "/abs/path", "projects": [{ "id", "path" }] }
+```
+
+### Create project
+
+```bash
+curl -s -X POST http://localhost:5173/api/projects \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"<project-id>"}'
+# 201 → { "id": "<project-id>" }
+# 400 → "Invalid project name"   (your id failed the regex)
+# 409 → "Project already exists"
+```
+
+**Gotcha**: the body field is called `name`, but it is validated as an **id**, not a human-readable name. It must match `^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$` — lowercase kebab-case by convention (e.g. `tinder-agents`, not `"Tinder for Agents"`). If you get "Invalid project name", your slug has spaces, uppercase, or forbidden chars.
+
+Other endpoints exist (frame POST/PATCH/DELETE, layout PATCH, SSE events) and are documented in `server/api.ts` if you ever need them — but for this skill, file edits are the intended path.
 
 ## Updating an existing frame
 
