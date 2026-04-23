@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ReactFlow,
@@ -12,6 +12,10 @@ import {
 import '@xyflow/react/dist/style.css'
 import { HtmlFrameNode } from '../shapes/HtmlFrameNode'
 import { useFrameSync } from '../hooks/useFrameSync'
+import { useTokenSync } from '../hooks/useTokenSync'
+import { useDesignDoc } from '../hooks/useDesignDoc'
+import { TokensSyncContext } from '../context/TokensSyncContext'
+import { TokensPanel } from '../components/TokensPanel'
 import { deleteFrame, patchLayout } from '../lib/api'
 import type { LayoutEntry } from '../lib/manifest'
 
@@ -51,10 +55,60 @@ function useLayoutWriter(projectId: string) {
   return enqueue
 }
 
+function toKebab(s: string): string {
+  return s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
+function pathToCssVar(path: string[]): string {
+  return '--' + path.map(toKebab).join('-')
+}
+
+function buildOverridesCss(overrides: Map<string, string>): string {
+  if (overrides.size === 0) return ''
+  const decls: string[] = []
+  for (const [key, value] of overrides) {
+    decls.push(`  ${pathToCssVar(key.split('.'))}: ${value};`)
+  }
+  return `:root {\n${decls.join('\n')}\n}\n`
+}
+
 function CanvasInner({ projectId }: { projectId: string }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const { loading } = useFrameSync(projectId, setNodes)
+  const { tokensCss } = useTokenSync(projectId)
+  const { design } = useDesignDoc(projectId)
   const writeLayout = useLayoutWriter(projectId)
+
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [overrides, setOverrides] = useState<Map<string, string>>(new Map())
+
+  const overridesCss = useMemo(() => buildOverridesCss(overrides), [overrides])
+  const tokensSyncValue = useMemo(() => ({ tokensCss, overridesCss }), [tokensCss, overridesCss])
+
+  const setOverride = useCallback((path: string[], value: string | null) => {
+    setOverrides(prev => {
+      const next = new Map(prev)
+      const key = path.join('.')
+      if (value === null) next.delete(key)
+      else next.set(key, value)
+      return next
+    })
+  }, [])
+
+  const resetOverrides = useCallback(() => setOverrides(new Map()), [])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 't' && e.key !== 'T') return
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      e.preventDefault()
+      setPanelOpen(o => !o)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const wrappedOnNodesChange = useCallback((changes: NodeChange[]) => {
     onNodesChange(changes)
@@ -87,55 +141,95 @@ function CanvasInner({ projectId }: { projectId: string }) {
   )
 
   return (
-    <div style={{ position: 'fixed', inset: 0 }}>
-      <div
-        style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          zIndex: 10,
-          background: 'rgba(255,255,255,0.9)',
-          padding: '6px 12px',
-          borderRadius: 6,
-          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-          fontSize: 13,
-          fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-        }}
-      >
-        <Link to="/" style={{ color: '#666', textDecoration: 'none' }}>← Projects</Link>
-        <span style={{ margin: '0 8px', color: '#ccc' }}>/</span>
-        <span style={{ fontWeight: 600 }}>{projectId}</span>
-      </div>
-      {loading && (
-        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, fontSize: 13, color: '#666' }}>
-          Loading…
+    <TokensSyncContext.Provider value={tokensSyncValue}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex' }}>
+      <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            zIndex: 10,
+            background: 'rgba(255,255,255,0.9)',
+            padding: '6px 12px',
+            borderRadius: 6,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+            fontSize: 13,
+            fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+          }}
+        >
+          <Link to="/" style={{ color: '#666', textDecoration: 'none' }}>← Projects</Link>
+          <span style={{ margin: '0 8px', color: '#ccc' }}>/</span>
+          <span style={{ fontWeight: 600 }}>{projectId}</span>
         </div>
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            zIndex: 10,
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+          }}
+        >
+          {loading && <span style={{ fontSize: 13, color: '#666' }}>Loading…</span>}
+          {!panelOpen && (
+            <button
+              onClick={() => setPanelOpen(true)}
+              title="Tokens (T)"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid #d8d8d8',
+                borderRadius: 6,
+                padding: '6px 10px',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+              }}
+            >
+              Tokens
+            </button>
+          )}
+        </div>
+        <ReactFlow
+          nodes={nodesWithProject}
+          edges={[]}
+          onNodesChange={wrappedOnNodesChange}
+          onBeforeDelete={handleBeforeDelete}
+          nodeTypes={nodeTypes}
+          nodesConnectable={false}
+          fitView
+          minZoom={0.1}
+          maxZoom={4}
+          onNodeDoubleClick={(_, node) => {
+            setNodes(nds => nds.map(n =>
+              n.id === node.id ? { ...n, data: { ...n.data, editMode: true } } : n
+            ))
+          }}
+          onPaneClick={() => {
+            setNodes(nds => nds.map(n =>
+              n.data.editMode ? { ...n, data: { ...n.data, editMode: false } } : n
+            ))
+          }}
+        >
+          <Background />
+          <Controls />
+        </ReactFlow>
+      </div>
+      {panelOpen && (
+        <TokensPanel
+          projectId={projectId}
+          design={design}
+          overrides={overrides}
+          onSetOverride={setOverride}
+          onReset={resetOverrides}
+          onClose={() => setPanelOpen(false)}
+        />
       )}
-      <ReactFlow
-        nodes={nodesWithProject}
-        edges={[]}
-        onNodesChange={wrappedOnNodesChange}
-        onBeforeDelete={handleBeforeDelete}
-        nodeTypes={nodeTypes}
-        nodesConnectable={false}
-        fitView
-        minZoom={0.1}
-        maxZoom={4}
-        onNodeDoubleClick={(_, node) => {
-          setNodes(nds => nds.map(n =>
-            n.id === node.id ? { ...n, data: { ...n.data, editMode: true } } : n
-          ))
-        }}
-        onPaneClick={() => {
-          setNodes(nds => nds.map(n =>
-            n.data.editMode ? { ...n, data: { ...n.data, editMode: false } } : n
-          ))
-        }}
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
     </div>
+    </TokensSyncContext.Provider>
   )
 }
 

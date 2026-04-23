@@ -46,3 +46,10 @@ export function patchLayout(projectId: string, frameId: string, patch: Partial<L
     body: JSON.stringify(patch),
   })
 }
+
+export function patchDesignTokens(projectId: string, tokens: Record<string, unknown>): Promise<{ ok: true }> {
+  return req(`/api/projects/${projectId}/design/tokens`, {
+    method: 'PATCH',
+    body: JSON.stringify({ tokens }),
+  })
+}

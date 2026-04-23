@@ -1,15 +1,24 @@
-import { memo, useCallback, useRef } from 'react'
+import { memo, useCallback, useContext, useEffect, useRef } from 'react'
 import { NodeResizer, useReactFlow, type NodeProps } from '@xyflow/react'
 import type { HtmlFrameData } from './HtmlFrameShape'
 import { deleteFrame, patchFrame } from '../lib/api'
+import { TokensSyncContext } from '../context/TokensSyncContext'
 
 const TITLE_BAR_HEIGHT = 32
 
 function HtmlFrameNodeComponent({ id, data, selected }: NodeProps) {
   const { setNodes } = useReactFlow()
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const { tokensCss, overridesCss } = useContext(TokensSyncContext)
 
   const frameData = data as unknown as HtmlFrameData
+
+  const postTokens = useCallback(() => {
+    const css = overridesCss ? `${tokensCss}\n${overridesCss}` : tokensCss
+    iframeRef.current?.contentWindow?.postMessage({ type: 'od-tokens', css }, '*')
+  }, [tokensCss, overridesCss])
+
+  useEffect(() => { postTokens() }, [postTokens])
 
   const handleRefresh = useCallback(() => {
     iframeRef.current?.contentWindow?.location.reload()
@@ -114,6 +123,7 @@ function HtmlFrameNodeComponent({ id, data, selected }: NodeProps) {
           ref={iframeRef}
           src={frameData.url}
           sandbox="allow-scripts allow-same-origin"
+          onLoad={postTokens}
           style={{
             width: '100%',
             flex: 1,

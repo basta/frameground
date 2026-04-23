@@ -85,6 +85,12 @@ TODO: reusable component patterns as they emerge. Structured values live in
 TODO: short bullets of what the aesthetic requires and what it forbids.
 `
 
+const SHARED_CSS_TEMPLATE = `/* Project-level CSS shared across every frame.
+   Add resets, @font-face declarations, and utility classes here.
+   DESIGN.md tokens are exposed automatically as CSS variables
+   (e.g. var(--colors-primary), var(--spacing-md)). */
+`
+
 const FEEL_MD_TEMPLATE = `# Feel
 
 How this project moves, occupies space, and treats atmosphere. Frame implementations
@@ -152,6 +158,7 @@ export function createProject(id: string): void {
   fs.writeFileSync(path.join(dir, 'PROJECT.md'), PROJECT_MD_TEMPLATE)
   fs.writeFileSync(path.join(dir, 'DESIGN.md'), DESIGN_MD_TEMPLATE)
   fs.writeFileSync(path.join(dir, 'FEEL.md'), FEEL_MD_TEMPLATE)
+  fs.writeFileSync(path.join(dir, 'shared.css'), SHARED_CSS_TEMPLATE)
   fs.writeFileSync(path.join(dir, DESIGN_REFERENCE.file), DESIGN_REFERENCE_HTML)
 }
 

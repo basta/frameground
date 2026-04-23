@@ -4,7 +4,7 @@ import path from 'path'
 import { createProject, listProjects, projectDir, projectExists, projectsRoot, resolveFrameFile, validProjectId } from './projects.ts'
 import { appendFrame, patchFrame, readManifest, removeFrame } from './manifest.ts'
 import { patchLayoutEntry, readLayout, removeLayoutEntry } from './layout.ts'
-import { readProjectDesign } from './design.ts'
+import { readProjectDesign, tokensToCss, writeDesignTokens } from './design.ts'
 import { subscribe } from './watcher.ts'
 import type { FrameEntry, LayoutEntry } from './types.ts'
 
@@ -99,6 +99,34 @@ const routes: { method: string; pattern: RegExp; handler: Handler }[] = [
       const [, id] = m
       if (!projectExists(id)) return error(res, 404, 'Project not found')
       json(res, 200, readProjectDesign(id))
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/projects\/([^/]+)\/tokens\.css$/,
+    handler: (_req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      const { design, parseError } = readProjectDesign(id)
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'text/css; charset=utf-8')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.end(tokensToCss(design.tokens, parseError))
+    },
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/projects\/([^/]+)\/design\/tokens$/,
+    handler: async (req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      const body = (await readBody(req)) as { tokens?: unknown }
+      const patch = body.tokens
+      if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+        return error(res, 400, 'tokens object required')
+      }
+      writeDesignTokens(id, patch as Record<string, unknown>)
+      json(res, 200, { ok: true })
     },
   },
   {
