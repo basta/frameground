@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>OpenDesign — Prompt to canvas.</title>
-<meta name="description" content="OpenDesign is a design tool Claude can drive. One sentence in, a rendered frame out, pinned to an infinite canvas." />
+<title>OpenDesign — The open source AI design tool.</title>
+<meta name="description" content="OpenDesign is an open-source, filesystem-native design tool that works with any coding agent. An alternative to Claude Design and Google Stitch." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -88,6 +88,11 @@ body::before {
   width: 6px; height: 6px;
   background: var(--colors-accent);
 }
+.nav-links {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
 .navlink {
   font-family: var(--typography-mono-font-family), monospace;
   font-size: 11px;
@@ -101,8 +106,8 @@ body::before {
 }
 .navlink:hover { color: var(--colors-ink); border-bottom-color: var(--colors-ink); }
 
+/* ── Hero ── */
 .hero {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -231,6 +236,7 @@ h1.head strong {
   background-repeat: repeat-y;
 }
 
+/* ── Canvas mock ── */
 .canvas-mock {
   width: 100%;
   max-width: 1120px;
@@ -477,6 +483,7 @@ h1.head strong {
   background: var(--colors-accent);
 }
 
+/* ── CTAs ── */
 .ctas {
   display: flex;
   gap: 22px;
@@ -527,6 +534,269 @@ h1.head strong {
 }
 .docs-link:hover { color: var(--colors-ink); border-bottom-color: var(--colors-ink); }
 
+/* ── Sections below the fold ── */
+.section {
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 72px 0;
+  border-top: 1px solid var(--colors-rule-soft);
+}
+.section-eyebrow {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-eyebrow::before {
+  content: "";
+  width: 16px;
+  height: 1px;
+  background: var(--colors-rule);
+  display: block;
+}
+.section h2 {
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-weight: 600;
+  font-size: clamp(22px, 2.4vw, 28px);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 16px;
+  color: var(--colors-ink);
+}
+.section p {
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--colors-ink-soft);
+  max-width: 600px;
+}
+.section p strong {
+  font-weight: 600;
+  color: var(--colors-ink);
+}
+
+/* ── What is OpenDesign ── */
+.what-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Pillars ── */
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 36px;
+}
+.pillar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pillar-label {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colors-accent);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--colors-rule-soft);
+}
+.pillar h3 {
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--colors-ink);
+}
+.pillar p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--colors-ink-soft);
+  max-width: none;
+}
+
+/* ── File tree ── */
+.tree-block {
+  margin-top: 28px;
+  border: 1px solid var(--colors-rule);
+  background: var(--colors-paper);
+  padding: 20px 24px;
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--colors-ink-soft);
+  position: relative;
+  overflow-x: auto;
+  white-space: pre;
+}
+.tree-block::before {
+  content: "~/projects/my-app";
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  padding: 6px 10px;
+  opacity: 0.7;
+}
+.tree-block .t-dir { color: var(--colors-ink); font-weight: 500; }
+.tree-block .t-file { color: var(--colors-ink-soft); }
+.tree-block .t-comment { color: var(--colors-muted); font-size: 11px; }
+
+/* ── Agent grid ── */
+.agent-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.agent-tag {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--colors-ink-soft);
+  padding: 6px 14px;
+  border: 1px solid var(--colors-rule);
+  background: var(--colors-paper);
+  transition: border-color 220ms ease, color 220ms ease;
+}
+.agent-tag:hover {
+  border-color: var(--colors-accent);
+  color: var(--colors-accent);
+}
+
+/* ── Compare strip ── */
+.compare-table {
+  width: 100%;
+  margin-top: 28px;
+  border-collapse: collapse;
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 12px;
+}
+.compare-table th {
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--colors-rule);
+}
+.compare-table th.highlight {
+  color: var(--colors-accent);
+}
+.compare-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--colors-rule-soft);
+  color: var(--colors-ink-soft);
+  vertical-align: top;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table td:first-child {
+  color: var(--colors-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.compare-table .yes { color: var(--colors-accent); font-weight: 500; }
+.compare-table .no { color: var(--colors-muted); }
+
+/* ── FAQ ── */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+.faq-item {
+  border-bottom: 1px solid var(--colors-rule-soft);
+}
+.faq-q {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 0;
+  cursor: pointer;
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--colors-ink);
+  letter-spacing: -0.01em;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: color 220ms ease;
+}
+.faq-q:hover { color: var(--colors-accent); }
+.faq-q .faq-icon {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 14px;
+  color: var(--colors-muted);
+  transition: transform 220ms ease;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+.faq-item.open .faq-icon { transform: rotate(45deg); }
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 320ms cubic-bezier(0.2,0.8,0.2,1), padding 320ms ease;
+  padding: 0 0;
+}
+.faq-item.open .faq-a {
+  max-height: 300px;
+  padding: 0 0 18px;
+}
+.faq-a p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--colors-ink-soft);
+}
+
+/* ── Footer ── */
+.footer {
+  border-top: 1px solid var(--colors-rule-soft);
+  padding: 28px 0 36px;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-left {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  color: var(--colors-muted);
+  letter-spacing: 0.06em;
+}
+.footer-right {
+  display: flex;
+  gap: 20px;
+}
+.footer-right a {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  text-decoration: none;
+  transition: color 220ms ease;
+}
+.footer-right a:hover { color: var(--colors-ink); }
+
+/* ── Animations ── */
 .reveal { opacity: 0; animation: fade 360ms cubic-bezier(0.2,0.8,0.2,1) forwards; }
 .r1 { animation-delay: 0ms; }
 .r2 { animation-delay: 60ms; }
@@ -545,6 +815,11 @@ h1.head strong {
   .queue-items { gap: 8px; }
   .queue-item { font-size: 10px; padding: 3px 8px; }
   .ctas { flex-direction: column; gap: 16px; align-items: flex-start; }
+  .pillars { grid-template-columns: 1fr; gap: 28px; }
+  .section { padding: 48px 0; }
+  .compare-table { font-size: 11px; }
+  .compare-table th, .compare-table td { padding: 8px 10px; }
+  .footer { flex-direction: column; gap: 16px; align-items: flex-start; }
 }
 </style>
 </head>
@@ -555,11 +830,15 @@ h1.head strong {
       <span class="glyph"></span>
       OpenDesign
     </div>
-    <a class="navlink" href="https://github.com/basta/OpenDesign">GitHub</a>
+    <div class="nav-links">
+      <a class="navlink" href="#what">About</a>
+      <a class="navlink" href="#compare">Compare</a>
+      <a class="navlink" href="https://github.com/basta/OpenDesign">GitHub</a>
+    </div>
   </nav>
 
   <main class="hero">
-    <p class="eyebrow reveal r2">Claude · Canvas · CLI</p>
+    <p class="eyebrow reveal r2">Open Source &middot; Local-First &middot; Agent-Agnostic</p>
 
     <div class="prompt-monument reveal r3" aria-label="Example prompt">
       <span class="slash" id="slash">/frame</span><span class="prompt-text" id="prompt-text">a dashboard with revenue charts</span>
@@ -576,7 +855,7 @@ h1.head strong {
     </div>
 
     <div class="headline-block reveal r5">
-      <h1 class="head">One sentence in. <strong>A rendered frame out.</strong></h1>
+      <h1 class="head">The open source AI design tool. <strong>One sentence in, a rendered frame out.</strong></h1>
     </div>
 
     <div class="connector-wrap reveal r6" aria-hidden="true">
@@ -584,7 +863,7 @@ h1.head strong {
     </div>
 
     <div class="canvas-mock reveal r7" aria-label="A zoomed-out view of the OpenDesign canvas showing the frame produced by the prompt">
-      <span class="mock-meta"><span class="mm-dot"></span>opendesign · canvas</span>
+      <span class="mock-meta"><span class="mm-dot"></span>opendesign &middot; canvas</span>
       <span class="mock-zoom">zoom 38%</span>
 
       <svg id="connector-svg" class="mock-connector" style="left: 0; top: 0;" width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 1120 400">
@@ -662,7 +941,7 @@ h1.head strong {
           </div>
         </div>
       </div>
-      <span id="produced-badge" class="produced-badge" style="left: 598px; top: 308px;">rendering… · just now</span>
+      <span id="produced-badge" class="produced-badge" style="left: 598px; top: 308px;">rendering&hellip; &middot; just now</span>
 
       <div id="fc-mobile" class="frame-card" style="left: 920px; top: 70px; width: 90px; height: 150px;">
         <div class="fc-chrome">
@@ -690,14 +969,192 @@ h1.head strong {
     </div>
 
     <div class="ctas reveal r7">
-      <a class="btn btn-primary" href="https://github.com/basta/OpenDesign#installation">Install<span class="arrow">→</span></a>
+      <a class="btn btn-primary" href="https://github.com/basta/OpenDesign#installation">Install<span class="arrow">&rarr;</span></a>
       <a class="docs-link" href="https://github.com/basta/OpenDesign#readme">Read the docs</a>
     </div>
   </main>
+
+  <!-- ── What is OpenDesign ── -->
+  <section class="section" id="what">
+    <div class="section-eyebrow">What is OpenDesign</div>
+    <div class="what-body">
+      <h2>A design tool your coding agent can drive.</h2>
+      <p>OpenDesign is an <strong>open-source Figma alternative</strong> built for AI workflows. Describe a screen, and your agent writes an HTML file to disk. OpenDesign watches the filesystem, renders it as an iframe, and pins it to an infinite canvas.</p>
+      <p>No accounts. No cloud. No proprietary format. <strong>Your designs are files on your machine</strong> &mdash; version them with git, edit them with vim, review them in a PR.</p>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-label">01 &mdash; Open Source</div>
+        <h3>MIT licensed. Fork it, extend it, own it.</h3>
+        <p>Every line of code is on GitHub. No telemetry, no usage limits, no "free tier." You run it, you control it.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">02 &mdash; Filesystem-Native</div>
+        <h3>Your designs are files. Always were.</h3>
+        <p>Each frame is a plain HTML file in a project directory. The manifest is JSON. The layout is JSON. <code>cat</code> it, <code>grep</code> it, <code>git diff</code> it.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">03 &mdash; Agent-Agnostic</div>
+        <h3>If it can write a file, it can design.</h3>
+        <p>OpenDesign works with any coding agent. Not locked to one model or one provider. Bring whatever tool you already use.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Filesystem ── -->
+  <section class="section" id="filesystem">
+    <div class="section-eyebrow">On Disk</div>
+    <h2>This is what a project looks like.</h2>
+    <p>No binary blobs. No cloud sync. Just a directory you can <code>ls</code>.</p>
+
+    <div class="tree-block">
+<span class="t-dir">my-app/</span>
+├── <span class="t-file">PROJECT.md</span>          <span class="t-comment"># what you're building</span>
+├── <span class="t-file">DESIGN.md</span>           <span class="t-comment"># design tokens (colors, type, spacing)</span>
+├── <span class="t-file">FEEL.md</span>             <span class="t-comment"># motion, composition, vibe</span>
+├── <span class="t-file">frames.json</span>         <span class="t-comment"># manifest — [{id, name, file}]</span>
+├── <span class="t-file">dashboard.html</span>      <span class="t-comment"># a frame — self-contained HTML</span>
+├── <span class="t-file">login.html</span>
+├── <span class="t-file">pricing.html</span>
+└── <span class="t-dir">.opendesign/</span>
+    └── <span class="t-file">layout.json</span>     <span class="t-comment"># canvas positions (x, y, w, h)</span>
+    </div>
+  </section>
+
+  <!-- ── Agent-agnostic ── -->
+  <section class="section" id="agents">
+    <div class="section-eyebrow">Bring Your Own Agent</div>
+    <h2>Works with any coding agent.</h2>
+    <p>OpenDesign watches your project directory. Any agent that can write an HTML file &mdash; or hit a local HTTP endpoint &mdash; can put a frame on the canvas. No plugins, no integrations, no setup.</p>
+
+    <div class="agent-grid">
+      <span class="agent-tag">Claude Code</span>
+      <span class="agent-tag">Cursor</span>
+      <span class="agent-tag">Windsurf</span>
+      <span class="agent-tag">Cline</span>
+      <span class="agent-tag">aider</span>
+      <span class="agent-tag">Copilot</span>
+      <span class="agent-tag">OpenCode</span>
+      <span class="agent-tag">Gemini CLI</span>
+      <span class="agent-tag">your own script</span>
+    </div>
+  </section>
+
+  <!-- ── Compare ── -->
+  <section class="section" id="compare">
+    <div class="section-eyebrow">How it Compares</div>
+    <h2>Different tools, different values.</h2>
+    <p>Claude Design and Google Stitch are impressive. They're also closed-source, cloud-hosted, and tied to a single model. OpenDesign takes a different approach.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="highlight">OpenDesign</th>
+          <th>Claude Design</th>
+          <th>Google Stitch</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Source</td>
+          <td class="yes">Open (MIT)</td>
+          <td class="no">Closed</td>
+          <td class="no">Closed</td>
+        </tr>
+        <tr>
+          <td>Runs on</td>
+          <td class="yes">Your machine</td>
+          <td class="no">Cloud</td>
+          <td class="no">Cloud</td>
+        </tr>
+        <tr>
+          <td>File format</td>
+          <td class="yes">HTML + JSON</td>
+          <td class="no">Proprietary</td>
+          <td class="no">Proprietary</td>
+        </tr>
+        <tr>
+          <td>Agent</td>
+          <td class="yes">Any</td>
+          <td class="no">Claude only</td>
+          <td class="no">Gemini only</td>
+        </tr>
+        <tr>
+          <td>Git-friendly</td>
+          <td class="yes">Yes</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Cost</td>
+          <td class="yes">Free</td>
+          <td class="no">Subscription</td>
+          <td class="no">Usage-based</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section class="section" id="faq">
+    <div class="section-eyebrow">FAQ</div>
+    <h2>Common questions.</h2>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">What is OpenDesign? <span class="faq-icon">+</span></button>
+        <div class="faq-a">
+          <p>An open-source design tool that renders AI-generated HTML frames on an infinite canvas. Think of it as a Figma-like surface that any coding agent can write to &mdash; by creating files on disk or calling a local HTTP API.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How is this different from Claude Design or Google Stitch? <span class="faq-icon">+</span></button>
+        <div class="faq-a">
+          <p>Those are great products, but they're closed-source, cloud-only, and locked to a single AI provider. OpenDesign is MIT-licensed, runs locally, and works with any agent that can write a file. Your designs stay on your filesystem as plain HTML &mdash; no proprietary formats.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Which AI models or agents does it work with? <span class="faq-icon">+</span></button>
+        <div class="faq-a">
+          <p>All of them. OpenDesign watches your project directory for file changes and exposes a local HTTP API. Any tool that can write an HTML file &mdash; Claude Code, Cursor, Windsurf, Cline, aider, a bash script &mdash; can create frames on the canvas.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do I need an account or API key? <span class="faq-icon">+</span></button>
+        <div class="faq-a">
+          <p>No. OpenDesign itself requires no account, no API key, and no internet connection. You bring your own coding agent &mdash; however you've already set that up is all you need.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Can I use it with git? <span class="faq-icon">+</span></button>
+        <div class="faq-a">
+          <p>Yes &mdash; that's a core design goal. Projects are directories with HTML files and JSON manifests. You can commit them, branch them, diff them, and review frames in pull requests just like code.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is it really free? <span class="faq-icon">+</span></button>
+        <div class="faq-a">
+          <p>Yes. MIT license, no telemetry, no usage limits. You run it on your own machine. The only cost is whatever you pay for the AI agent you choose to use with it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="footer-left">OpenDesign &middot; MIT License</div>
+    <div class="footer-right">
+      <a href="https://github.com/basta/OpenDesign">GitHub</a>
+      <a href="https://github.com/basta/OpenDesign#installation">Install</a>
+    </div>
+  </footer>
 </div>
 
 <script>
 (function(){
+  /* ── Carousel ── */
   var VISIBLE = 3500;
   var FADE    = 360;
 
@@ -785,6 +1242,18 @@ h1.head strong {
   }
 
   setTimeout(doTransition, VISIBLE);
+
+  /* ── FAQ accordion ── */
+  document.querySelectorAll('.faq-q').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var item = btn.parentElement;
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(function(i) {
+        i.classList.remove('open');
+      });
+      if (!isOpen) item.classList.add('open');
+    });
+  });
 })();
 </script>
 </body>
