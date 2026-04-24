@@ -53,3 +53,26 @@ export function patchDesignTokens(projectId: string, tokens: Record<string, unkn
     body: JSON.stringify({ tokens }),
   })
 }
+
+export interface SuggestionVariant {
+  name: string
+  description?: string
+  tokens: Record<string, unknown>
+}
+
+export interface Suggestion {
+  id: string
+  tweak: string
+  createdAt?: string
+  prompt?: string
+  source?: string
+  variants: SuggestionVariant[]
+}
+
+export function fetchSuggestions(projectId: string): Promise<{ suggestions: Suggestion[] }> {
+  return req(`/api/projects/${projectId}/suggestions`)
+}
+
+export function dismissSuggestion(projectId: string, suggestionId: string): Promise<{ ok: true }> {
+  return req(`/api/projects/${projectId}/suggestions/${suggestionId}`, { method: 'DELETE' })
+}

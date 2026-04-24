@@ -88,7 +88,20 @@ components:
     padding: "12px 20px"
 ```
 
-Use `{colors.<name>}` / `{typography.<name>}` / `{rounded.<name>}` refs inside `components`; don't re-specify hex values there.
+Use `{colors.<name>}` / `{typography.<name>}` / `{rounded.<name>}` refs inside `components`; don't re-specify hex values there. These refs resolve to `var(--colors-<name>)` etc. in the generated `tokens.css`.
+
+**When writing the frame's own CSS** (not DESIGN.md), reference tokens as CSS variables — never inline literal values. Examples:
+
+```css
+/* ✓ Live — updates when DESIGN.md changes */
+.hero { background: var(--colors-primary); padding: var(--spacing-lg); border-radius: var(--rounded-md); }
+h1    { font-family: var(--typography-display-font-family); font-size: var(--typography-display-font-size); }
+
+/* ✗ Dead literal — frame won't update when DESIGN.md is edited */
+.hero { background: #e33; padding: 32px; }
+```
+
+Variable names are DESIGN.md's YAML path kebab-joined (camelCase → kebab-case per segment): `typography.display.fontFamily` → `--typography-display-font-family`. Every leaf in `colors`, `typography`, `spacing`, `rounded`, and `components` becomes a variable. Meta keys (`version`, `name`, `description`) do not.
 
 **2. Markdown prose blurbs for DESIGN.md** — one short paragraph per section, in this canonical order:
 

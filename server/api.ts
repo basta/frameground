@@ -5,6 +5,7 @@ import { createProject, listProjects, projectDir, projectExists, projectsRoot, r
 import { appendFrame, patchFrame, readManifest, removeFrame } from './manifest.ts'
 import { patchLayoutEntry, readLayout, removeLayoutEntry } from './layout.ts'
 import { readProjectDesign, tokensToCss, writeDesignTokens } from './design.ts'
+import { isValidSuggestionId, listSuggestions, removeSuggestion } from './suggestions.ts'
 import { subscribe } from './watcher.ts'
 import type { FrameEntry, LayoutEntry } from './types.ts'
 
@@ -217,6 +218,27 @@ const routes: { method: string; pattern: RegExp; handler: Handler }[] = [
       const h = asNumber(body.h); if (h !== null) patch.h = h
       const updated = patchLayoutEntry(id, frameId, patch)
       json(res, 200, updated)
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/projects\/([^/]+)\/suggestions$/,
+    handler: (_req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      json(res, 200, { suggestions: listSuggestions(id) })
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/projects\/([^/]+)\/suggestions\/([^/]+)$/,
+    handler: (_req, res, m) => {
+      const [, id, sid] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      if (!isValidSuggestionId(sid)) return error(res, 400, 'Invalid suggestion id')
+      const ok = removeSuggestion(id, sid)
+      if (!ok) return error(res, 404, 'Suggestion not found')
+      json(res, 200, { ok: true })
     },
   },
   {

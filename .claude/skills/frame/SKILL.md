@@ -1,8 +1,8 @@
 ---
 name: frame
 description: Create or update an HTML frame on the OpenDesign canvas. Use when the user asks to create a screen, page, component, or frame for their app.
-argument-hint: [project] [description of what the frame should show]
-allowed-tools: Read Write Edit Bash(curl *) Bash(ls *) Bash(node ./node_modules/@google/design.md/*) Glob
+argument-hint: [project] [description of what the frame should show] [--no-suggest]
+allowed-tools: Read Write Edit Bash(curl *) Bash(ls *) Bash(node ./node_modules/@google/design.md/*) Bash(date *) Skill Glob
 ---
 
 # Create or update an OpenDesign Frame
@@ -39,6 +39,10 @@ Response:
 ```
 
 Parse `$ARGUMENTS` — the first token should be the project name. If it's missing or doesn't match an existing project, ask the user which project to use (or list the options). If they want a fresh project, create it via `POST /api/projects` — see "HTTP API reference" at the end of this doc. The rest of `$ARGUMENTS` is the frame description.
+
+Also extract these flags out of `$ARGUMENTS` before treating the remainder as the description:
+
+- `--no-suggest` — skip the auto-suggestion step at the end (Step 10).
 
 Use the `path` field from the response — don't guess paths.
 
@@ -92,8 +96,54 @@ Hard constraints (these override stylistic preferences):
 - `<meta charset="UTF-8">` and `<meta name="viewport" ...>`.
 - Render responsively — the iframe matches the layout size.
 - Interactive elements must actually work (buttons, inputs, toggles).
+- **Include the shared-tokens block in `<head>`** (see below). Reference DESIGN.md tokens as CSS variables (`var(--colors-primary)`, `var(--typography-display-family)`, `var(--spacing-md)`, `var(--rounded-lg)`, `var(--components-button-radius)`) — never inline literal token values. Changing DESIGN.md should update this frame live.
 
 Do NOT fall back to the generic system font stack or Inter/Arial/Roboto. Pick distinctive fonts per the `frontend-design` skill.
+
+### Shared tokens block
+
+Every frame's `<head>` must include this block (with `PROJECT_ID` substituted for the actual project id). It wires the frame to DESIGN.md tokens so edits propagate live without reloading the iframe.
+
+```html
+<link rel="stylesheet" href="/frames/PROJECT_ID/shared.css">
+<style id="od-tokens">/* tokens injected by OpenDesign canvas */</style>
+<script>
+(function(){
+  window.addEventListener('message', function(e){
+    if (!e.data || e.data.type !== 'od-tokens') return;
+    var el = document.getElementById('od-tokens');
+    if (el) el.textContent = e.data.css;
+  });
+  if (window.parent === window) {
+    fetch('/api/projects/PROJECT_ID/tokens.css', {cache:'no-store'})
+      .then(function(r){ return r.text(); })
+      .then(function(css){
+        var el = document.getElementById('od-tokens');
+        if (el) el.textContent = css;
+      }).catch(function(){});
+  }
+})();
+</script>
+```
+
+Load order matters: `shared.css` (static, project-level raw CSS) → `od-tokens` (injected tokens from DESIGN.md via the canvas) → the frame's own inline `<style>`. Later layers win — so the frame can override tokens for one-off tweaks.
+
+**Variable naming** follows DESIGN.md's YAML paths kebab-joined (camelCase → kebab-case at each segment):
+
+| YAML path in DESIGN.md | CSS variable |
+|---|---|
+| `colors.primary` | `var(--colors-primary)` |
+| `colors.surface` | `var(--colors-surface)` |
+| `spacing.md` | `var(--spacing-md)` |
+| `rounded.lg` | `var(--rounded-lg)` |
+| `typography.display.fontFamily` | `var(--typography-display-font-family)` |
+| `typography.display.fontSize` | `var(--typography-display-font-size)` |
+| `typography.display.fontWeight` | `var(--typography-display-font-weight)` |
+| `typography.body.lineHeight` | `var(--typography-body-line-height)` |
+| `components.button-primary.backgroundColor` | `var(--components-button-primary-background-color)` |
+| `components.button-primary.rounded` | `var(--components-button-primary-rounded)` |
+
+**Reference resolution**: `{colors.primary}` in DESIGN.md components resolves to `var(--colors-primary)` in the output CSS, so indirection is preserved. Object refs like `typography: "{typography.body}"` don't resolve to a useful single variable — reference individual leaves (`var(--typography-body-font-family)`, etc.) instead.
 
 ## Step 5: Register in `frames.json`
 
@@ -155,6 +205,23 @@ node ./node_modules/@google/design.md/dist/index.js lint <project-path>/DESIGN.m
 Parse the JSON output. Surface `error`-severity findings verbatim so the user can fix them (broken token refs, etc.). Warnings and info are noise — mention only if the user asked for a strict review. **Never roll back a frame because lint complained** — lint is advisory.
 
 FEEL.md is not linted; it's freeform prose.
+
+## Step 10: Seed design suggestions (default on)
+
+Unless `--no-suggest` was passed in Step 1, finish by invoking the `/suggest` skill twice for this project — once for `palette`, once for `typography`. Pass `--source frame` so the panel can badge the cards as auto-seeded:
+
+```
+/suggest <projectId> palette --source frame
+/suggest <projectId> typography --source frame
+```
+
+This drops two cards into the project's Tokens panel ("Suggestions" section) the moment the frame appears on the canvas — three palette variants and three typography variants the user can preview and apply with one click. Each is scratch (no DESIGN.md edit until they hit Commit), so it's safe to seed even on filled projects.
+
+Skip this step when:
+
+- `--no-suggest` was passed.
+- DESIGN.md is *fresh* and the user explicitly committed to a single direction in the first-frame protocol — surfacing alternatives immediately would muddy the commitment they just made. (You can still suggest later when they ask.)
+- The project already has many unread suggestions accumulating; ask before piling on more.
 
 ## HTTP API reference
 

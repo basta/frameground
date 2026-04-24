@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ProjectDesign } from '../hooks/useDesignDoc'
-import { patchDesignTokens } from '../lib/api'
+import { patchDesignTokens, type Suggestion } from '../lib/api'
 
 const SKIP_TOP_KEYS = new Set(['version', 'name', 'description', 'components'])
 const REF_RE = /^\{([a-zA-Z0-9_.-]+)\}$/
@@ -11,7 +11,10 @@ interface Props {
   projectId: string
   design: ProjectDesign | null
   overrides: Map<string, string>
+  suggestions: Suggestion[]
   onSetOverride: (path: string[], value: string | null) => void
+  onApplyVariant: (tokens: Record<string, unknown>) => void
+  onDismissSuggestion: (id: string) => void
   onReset: () => void
   onClose: () => void
 }
@@ -21,7 +24,17 @@ interface Leaf {
   value: string | number
 }
 
-export function TokensPanel({ projectId, design, overrides, onSetOverride, onReset, onClose }: Props) {
+export function TokensPanel({
+  projectId,
+  design,
+  overrides,
+  suggestions,
+  onSetOverride,
+  onApplyVariant,
+  onDismissSuggestion,
+  onReset,
+  onClose,
+}: Props) {
   const [committing, setCommitting] = useState(false)
   const [commitError, setCommitError] = useState<string | null>(null)
 
@@ -62,6 +75,24 @@ export function TokensPanel({ projectId, design, overrides, onSetOverride, onRes
         {design?.parseError && (
           <div style={errorBoxStyle}>parse error: {design.parseError}</div>
         )}
+        <section style={sectionStyle}>
+          <h3 style={sectionTitleStyle}>Suggestions</h3>
+          {suggestions.length === 0 ? (
+            <div style={emptyHintStyle}>
+              No suggestions yet. Run{' '}
+              <code style={codeStyle}>/suggest {projectId} palette</code> from your terminal.
+            </div>
+          ) : (
+            suggestions.map(s => (
+              <SuggestionCard
+                key={s.id}
+                suggestion={s}
+                onApply={onApplyVariant}
+                onDismiss={() => onDismissSuggestion(s.id)}
+              />
+            ))
+          )}
+        </section>
         {groups.length === 0 && (
           <div style={{ padding: 16, fontSize: 12, color: '#888' }}>No tokens.</div>
         )}
@@ -217,6 +248,103 @@ function normalizeHex6(hex: string): string {
   return hex.slice(0, 7)
 }
 
+function SuggestionCard({
+  suggestion,
+  onApply,
+  onDismiss,
+}: {
+  suggestion: Suggestion
+  onApply: (tokens: Record<string, unknown>) => void
+  onDismiss: () => void
+}) {
+  return (
+    <div style={cardStyle}>
+      <header style={cardHeaderStyle}>
+        <span style={tweakChipStyle}>{suggestion.tweak}</span>
+        {suggestion.source === 'frame' && <span style={badgeStyle}>from frame</span>}
+        {suggestion.prompt && (
+          <span style={promptTextStyle} title={suggestion.prompt}>
+            "{suggestion.prompt}"
+          </span>
+        )}
+        <button onClick={onDismiss} style={dismissBtnStyle} title="Dismiss">×</button>
+      </header>
+      {suggestion.variants.map((v, i) => (
+        <button
+          key={`${suggestion.id}-${i}`}
+          onClick={() => onApply(v.tokens)}
+          style={variantRowStyle}
+          title="Click to apply as overrides"
+        >
+          <div style={variantNameStyle}>{v.name}</div>
+          {v.description && <div style={variantDescStyle}>{v.description}</div>}
+          {suggestion.tweak === 'palette' && <PalettePreview tokens={v.tokens} />}
+          {suggestion.tweak === 'typography' && <TypographyPreview tokens={v.tokens} />}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function PalettePreview({ tokens }: { tokens: Record<string, unknown> }) {
+  const colors = (tokens.colors as Record<string, unknown> | undefined) ?? {}
+  const swatches: { name: string; val: string }[] = []
+  for (const [name, val] of Object.entries(colors)) {
+    if (typeof val === 'string') swatches.push({ name, val })
+  }
+  if (swatches.length === 0) return null
+  return (
+    <div style={{ display: 'flex', gap: 3, marginTop: 6, flexWrap: 'wrap' }}>
+      {swatches.slice(0, 10).map(s => (
+        <div
+          key={s.name}
+          title={`${s.name}: ${s.val}`}
+          style={{
+            width: 18,
+            height: 18,
+            background: s.val,
+            border: '1px solid rgba(0,0,0,0.12)',
+            borderRadius: 2,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function TypographyPreview({ tokens }: { tokens: Record<string, unknown> }) {
+  const t = (tokens.typography as Record<string, unknown> | undefined) ?? {}
+  const familyOf = (key: string): string | null => {
+    const role = t[key] as Record<string, unknown> | undefined
+    if (!role || typeof role !== 'object') return null
+    const ff = role.fontFamily
+    return typeof ff === 'string' ? ff : null
+  }
+  const display = familyOf('display')
+  const body = familyOf('body')
+  const mono = familyOf('mono')
+  if (!display && !body && !mono) return null
+  return (
+    <div style={{ marginTop: 6, lineHeight: 1.3 }}>
+      {display && (
+        <div style={{ fontFamily: `'${display}', serif`, fontSize: 15, fontWeight: 600 }}>
+          Aa <span style={typoFaceLabelStyle}>{display}</span>
+        </div>
+      )}
+      {body && (
+        <div style={{ fontFamily: `'${body}', sans-serif`, fontSize: 11 }}>
+          The quick brown fox <span style={typoFaceLabelStyle}>{body}</span>
+        </div>
+      )}
+      {mono && (
+        <div style={{ fontFamily: `'${mono}', ui-monospace, monospace`, fontSize: 10 }}>
+          {`{ }`} <span style={typoFaceLabelStyle}>{mono}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const panelStyle: React.CSSProperties = {
   width: 320,
   height: '100%',
@@ -349,3 +477,101 @@ const primaryBtnStyle = (disabled: boolean): React.CSSProperties => ({
   borderRadius: 3,
   cursor: disabled ? 'not-allowed' : 'pointer',
 })
+const cardStyle: React.CSSProperties = {
+  border: '1px solid #e3e2de',
+  borderRadius: 4,
+  marginBottom: 8,
+  background: '#fff',
+  overflow: 'hidden',
+}
+const cardHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  padding: '6px 8px',
+  borderBottom: '1px solid #f0f0ec',
+  background: '#fafafa',
+}
+const tweakChipStyle: React.CSSProperties = {
+  fontSize: 9,
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  padding: '2px 6px',
+  background: '#2A4DFF',
+  color: '#fff',
+  borderRadius: 2,
+}
+const badgeStyle: React.CSSProperties = {
+  fontSize: 9,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  padding: '2px 5px',
+  background: '#f2f1ee',
+  color: '#666',
+  borderRadius: 2,
+}
+const promptTextStyle: React.CSSProperties = {
+  flex: 1,
+  fontSize: 11,
+  color: '#666',
+  fontStyle: 'italic',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}
+const dismissBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: 14,
+  color: '#999',
+  padding: '0 4px',
+  lineHeight: 1,
+  marginLeft: 'auto',
+}
+const variantRowStyle: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  textAlign: 'left',
+  padding: '8px 10px',
+  background: '#fff',
+  border: 'none',
+  borderTop: '1px solid #f0f0ec',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  fontSize: 'inherit',
+  color: 'inherit',
+}
+const variantNameStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: '#222',
+}
+const variantDescStyle: React.CSSProperties = {
+  fontSize: 11,
+  color: '#777',
+  marginTop: 2,
+  lineHeight: 1.35,
+}
+const typoFaceLabelStyle: React.CSSProperties = {
+  fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+  fontSize: 10,
+  color: '#999',
+  marginLeft: 6,
+  fontWeight: 400,
+}
+const emptyHintStyle: React.CSSProperties = {
+  padding: '8px 4px',
+  fontSize: 11,
+  color: '#888',
+  lineHeight: 1.5,
+}
+const codeStyle: React.CSSProperties = {
+  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  fontSize: 10,
+  background: '#f2f1ee',
+  padding: '1px 4px',
+  borderRadius: 2,
+  color: '#222',
+}

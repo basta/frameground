@@ -240,8 +240,12 @@ FEEL.md (follow it for motion, spatial composition, and backgrounds):
 <entire contents of FEEL.md, inlined here>
 
 The YAML front-matter at the top of DESIGN.md is authoritative for colors,
-typography, spacing, rounded, and components. In the HTML itself, expand
-`{colors.primary}`-style refs to concrete values or CSS variables.
+typography, spacing, rounded, and components. DESIGN.md tokens are exposed
+to every frame as CSS variables: `colors.primary` → `var(--colors-primary)`,
+`typography.display.fontFamily` → `var(--typography-display-font-family)`,
+etc. (YAML path kebab-joined, camelCase → kebab-case per segment). Prefer
+referencing `var(--...)` in your CSS over inlining literal hex/px values
+so DESIGN.md edits propagate live.
 
 Your job:
 1. Read the listed source files (and anything they directly reference for this
@@ -256,6 +260,25 @@ Your job:
    - Interactive elements (buttons, inputs, toggles) should visually work even
      if the underlying logic is stubbed.
    - Static content: real copy from the source — don't lorem-ipsum it.
+   - MUST include the shared-tokens block in <head> (substitute the project id):
+
+     <link rel="stylesheet" href="/frames/<projectName>/shared.css">
+     <style id="od-tokens">/* tokens injected by OpenDesign canvas */</style>
+     <script>
+     (function(){
+       window.addEventListener('message', function(e){
+         if (!e.data || e.data.type !== 'od-tokens') return;
+         var el = document.getElementById('od-tokens');
+         if (el) el.textContent = e.data.css;
+       });
+       if (window.parent === window) {
+         fetch('/api/projects/<projectName>/tokens.css', {cache:'no-store'})
+           .then(function(r){ return r.text(); })
+           .then(function(css){ var el = document.getElementById('od-tokens'); if (el) el.textContent = css; })
+           .catch(function(){});
+       }
+     })();
+     </script>
 3. Apply DESIGN.md's typography, color, motion, and composition rules. If the
    source used different fonts/colors, OVERRIDE them with DESIGN.md's choices
    (this is a redesign-ready port, not a pixel-perfect clone).

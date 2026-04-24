@@ -6,6 +6,20 @@ import { TokensSyncContext } from '../context/TokensSyncContext'
 
 const TITLE_BAR_HEIGHT = 32
 
+function hoistImports(css: string): string {
+  const seen = new Set<string>()
+  const imports: string[] = []
+  const rest: string[] = []
+  for (const line of css.split('\n')) {
+    if (line.trimStart().startsWith('@import')) {
+      if (!seen.has(line)) { seen.add(line); imports.push(line) }
+    } else {
+      rest.push(line)
+    }
+  }
+  return imports.length === 0 ? css : [...imports, ...rest].join('\n')
+}
+
 function HtmlFrameNodeComponent({ id, data, selected }: NodeProps) {
   const { setNodes } = useReactFlow()
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -14,7 +28,8 @@ function HtmlFrameNodeComponent({ id, data, selected }: NodeProps) {
   const frameData = data as unknown as HtmlFrameData
 
   const postTokens = useCallback(() => {
-    const css = overridesCss ? `${tokensCss}\n${overridesCss}` : tokensCss
+    const raw = overridesCss ? `${tokensCss}\n${overridesCss}` : tokensCss
+    const css = hoistImports(raw)
     iframeRef.current?.contentWindow?.postMessage({ type: 'od-tokens', css }, '*')
   }, [tokensCss, overridesCss])
 

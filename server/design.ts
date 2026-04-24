@@ -56,9 +56,26 @@ function readDesignFile(file: string): { tokens: Record<string, unknown>; body: 
 
 const META_KEYS = new Set(['version', 'name', 'description'])
 
+function collectFontFamilies(val: unknown, out: Set<string>): void {
+  if (!val || typeof val !== 'object' || Array.isArray(val)) return
+  const obj = val as Record<string, unknown>
+  if (typeof obj.fontFamily === 'string' && !obj.fontFamily.startsWith('var(')) {
+    out.add(obj.fontFamily)
+  }
+  for (const v of Object.values(obj)) collectFontFamilies(v, out)
+}
+
+export function googleFontsImport(family: string): string {
+  return `@import url('https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@200;300;400;500;600;700&display=swap');`
+}
+
 export function tokensToCss(tokens: Record<string, unknown>, parseError?: string): string {
   const head: string[] = []
   if (parseError) head.push(`/* parseError: ${parseError.replace(/\*\//g, '*\\/')} */`)
+
+  const families = new Set<string>()
+  collectFontFamilies(tokens, families)
+  const imports = [...families].map(googleFontsImport)
 
   const decls: string[] = []
   const skipped: string[] = []
@@ -77,7 +94,7 @@ export function tokensToCss(tokens: Record<string, unknown>, parseError?: string
     }
   }
 
-  const out: string[] = [...head, ':root {']
+  const out: string[] = [...imports, ...head, ':root {']
   if (decls.length) out.push(decls.join('\n'))
   out.push('}')
   for (const s of skipped) out.push(`/* skipped: ${s} */`)

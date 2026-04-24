@@ -14,9 +14,10 @@ import { HtmlFrameNode } from '../shapes/HtmlFrameNode'
 import { useFrameSync } from '../hooks/useFrameSync'
 import { useTokenSync } from '../hooks/useTokenSync'
 import { useDesignDoc } from '../hooks/useDesignDoc'
+import { useSuggestions } from '../hooks/useSuggestions'
 import { TokensSyncContext } from '../context/TokensSyncContext'
 import { TokensPanel } from '../components/TokensPanel'
-import { deleteFrame, patchLayout } from '../lib/api'
+import { deleteFrame, dismissSuggestion, patchLayout } from '../lib/api'
 import type { LayoutEntry } from '../lib/manifest'
 
 const nodeTypes = { 'html-frame': HtmlFrameNode }
@@ -65,11 +66,19 @@ function pathToCssVar(path: string[]): string {
 
 function buildOverridesCss(overrides: Map<string, string>): string {
   if (overrides.size === 0) return ''
+  const families: string[] = []
   const decls: string[] = []
   for (const [key, value] of overrides) {
     decls.push(`  ${pathToCssVar(key.split('.'))}: ${value};`)
+    if (key.split('.').pop() === 'fontFamily' && !value.startsWith('var(')) {
+      families.push(value)
+    }
   }
-  return `:root {\n${decls.join('\n')}\n}\n`
+  const imports = families
+    .map(f => `@import url('https://fonts.googleapis.com/css2?family=${f.replace(/\s+/g, '+')}:wght@200;300;400;500;600;700&display=swap');`)
+    .join('\n')
+  const root = `:root {\n${decls.join('\n')}\n}\n`
+  return imports ? `${imports}\n${root}` : root
 }
 
 function CanvasInner({ projectId }: { projectId: string }) {
@@ -77,6 +86,7 @@ function CanvasInner({ projectId }: { projectId: string }) {
   const { loading } = useFrameSync(projectId, setNodes)
   const { tokensCss } = useTokenSync(projectId)
   const { design } = useDesignDoc(projectId)
+  const { suggestions } = useSuggestions(projectId)
   const writeLayout = useLayoutWriter(projectId)
 
   const [panelOpen, setPanelOpen] = useState(false)
@@ -94,6 +104,27 @@ function CanvasInner({ projectId }: { projectId: string }) {
       return next
     })
   }, [])
+
+  const applyVariant = useCallback((tokens: Record<string, unknown>) => {
+    setOverrides(prev => {
+      const next = new Map(prev)
+      const visit = (val: unknown, path: string[]) => {
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          for (const k of Object.keys(val as Record<string, unknown>)) {
+            visit((val as Record<string, unknown>)[k], [...path, k])
+          }
+        } else if (typeof val === 'string' || typeof val === 'number') {
+          next.set(path.join('.'), String(val))
+        }
+      }
+      visit(tokens, [])
+      return next
+    })
+  }, [])
+
+  const handleDismissSuggestion = useCallback((id: string) => {
+    dismissSuggestion(projectId, id).catch(() => {})
+  }, [projectId])
 
   const resetOverrides = useCallback(() => setOverrides(new Map()), [])
 
@@ -223,7 +254,10 @@ function CanvasInner({ projectId }: { projectId: string }) {
           projectId={projectId}
           design={design}
           overrides={overrides}
+          suggestions={suggestions}
           onSetOverride={setOverride}
+          onApplyVariant={applyVariant}
+          onDismissSuggestion={handleDismissSuggestion}
           onReset={resetOverrides}
           onClose={() => setPanelOpen(false)}
         />

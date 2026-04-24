@@ -132,6 +132,35 @@ Rules:
 - Responsive; iframe matches the layout size.
 - DO NOT default to Inter, Roboto, Arial, or system fonts. DO NOT default to
   purple-on-white gradients. Pick distinctive, intentional choices.
+- MUST include the shared-tokens block in <head>:
+
+  <link rel="stylesheet" href="/frames/<projectId>/shared.css">
+  <style id="od-tokens">/* tokens injected by OpenDesign canvas */</style>
+  <script>
+  (function(){
+    window.addEventListener('message', function(e){
+      if (!e.data || e.data.type !== 'od-tokens') return;
+      var el = document.getElementById('od-tokens');
+      if (el) el.textContent = e.data.css;
+    });
+    if (window.parent === window) {
+      fetch('/api/projects/<projectId>/tokens.css', {cache:'no-store'})
+        .then(function(r){ return r.text(); })
+        .then(function(css){ var el = document.getElementById('od-tokens'); if (el) el.textContent = css; })
+        .catch(function(){});
+    }
+  })();
+  </script>
+
+  - Execution mode: reference DESIGN.md tokens as var(--colors-primary),
+    var(--typography-display-font-family), etc. in your CSS — all alts share
+    the same tokens, editing DESIGN.md will update all of them live.
+  - Direction / --wild mode: still include the block above, then add your
+    own <style> LATER in <head> that redeclares :root { --colors-primary: ...;
+    --typography-display-font-family: ...; ... } with your committed aesthetic.
+    Inline <style> loads after #od-tokens so your overrides win the cascade.
+    This keeps alts aesthetically independent but pre-wired if the user
+    commits one as the project's direction.
 
 Register the frame atomically with the server:
 

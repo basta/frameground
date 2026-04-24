@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenDesign — Prompt to canvas.</title>
+<meta name="description" content="OpenDesign is a design tool Claude can drive. One sentence in, a rendered frame out, pinned to an infinite canvas." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --colors-paper: #f3f2ed;
+  --colors-paper-deep: #e7e5dc;
+  --colors-ink: #1c1720;
+  --colors-ink-soft: #3e3843;
+  --colors-muted: #908a95;
+  --colors-rule: #d9d6d1;
+  --colors-rule-soft: #e3e0da;
+  --colors-accent: #6a2b55;
+  --colors-accent-soft: rgba(106, 43, 85, 0.08);
+  --colors-accent-glow: rgba(106, 43, 85, 0.15);
+  --colors-accent-fade: rgba(106, 43, 85, 0.4);
+  --colors-dot: rgba(28, 23, 32, 0.08);
+
+  --typography-display-font-family: "Space Grotesk";
+  --typography-body-font-family: "Space Grotesk";
+  --typography-mono-font-family: "JetBrains Mono";
+  --typography-prompt-font-family: "JetBrains Mono";
+
+  --dot-dense: rgba(17, 17, 17, 0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--colors-paper);
+  color: var(--colors-ink);
+  font-family: var(--typography-body-font-family), ui-sans-serif, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(var(--colors-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+.stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 0 64px;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0 20px;
+  border-bottom: 1px solid var(--colors-rule-soft);
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.015em;
+  color: var(--colors-ink);
+}
+.wordmark .glyph {
+  width: 14px; height: 14px;
+  border: 1px solid var(--colors-ink);
+  position: relative;
+}
+.wordmark .glyph::after {
+  content: "";
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 6px; height: 6px;
+  background: var(--colors-accent);
+}
+.navlink {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--colors-ink-soft);
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 220ms ease, color 220ms ease;
+}
+.navlink:hover { color: var(--colors-ink); border-bottom-color: var(--colors-ink); }
+
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 0 40px;
+}
+
+.eyebrow {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before,
+.eyebrow::after {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: var(--colors-rule);
+  display: block;
+}
+
+.prompt-monument {
+  text-align: center;
+  margin-bottom: 0;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+.prompt-monument .slash {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-weight: 500;
+  color: var(--colors-accent);
+  font-size: clamp(28px, 3.4vw, 38px);
+  margin-right: 14px;
+  display: inline-block;
+  transition: color 360ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.prompt-monument .prompt-text {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-weight: 400;
+  color: var(--colors-ink);
+  font-size: clamp(26px, 3.2vw, 36px);
+  letter-spacing: -0.01em;
+}
+
+.carousel-block {
+  margin-bottom: 28px;
+  margin-top: 18px;
+  text-align: center;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.queue-label {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  opacity: 0.6;
+}
+.queue-items {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.queue-item {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--colors-ink-soft);
+  padding: 4px 10px;
+  border: 1px solid var(--colors-rule);
+  border-radius: 0;
+  background: var(--colors-paper);
+  transition: all 320ms cubic-bezier(0.2,0.8,0.2,1);
+  opacity: 0.5;
+}
+.queue-item.active {
+  border: 1px solid var(--colors-accent);
+  background: var(--colors-paper);
+  color: var(--colors-accent);
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--colors-accent-soft);
+}
+
+.headline-block {
+  text-align: center;
+  max-width: 620px;
+  margin-bottom: 24px;
+}
+h1.head {
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-weight: 300;
+  font-size: clamp(16px, 1.4vw, 18px);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--colors-ink-soft);
+}
+h1.head strong {
+  font-weight: 600;
+  color: var(--colors-ink);
+}
+
+.connector-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+  position: relative;
+  height: 20px;
+}
+.connector-line {
+  position: relative;
+  width: 1px;
+  height: 100%;
+  background-image: linear-gradient(to bottom, var(--colors-rule) 50%, transparent 50%);
+  background-size: 1px 4px;
+  background-repeat: repeat-y;
+}
+
+.canvas-mock {
+  width: 100%;
+  max-width: 1120px;
+  height: 400px;
+  position: relative;
+  border: 1px solid var(--colors-rule);
+  background: var(--colors-paper);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.canvas-mock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--dot-dense) 1px, transparent 1px);
+  background-size: 14px 14px;
+  background-position: 0 0;
+  opacity: 0.9;
+  pointer-events: none;
+}
+.canvas-mock .mock-meta {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  z-index: 5;
+}
+.canvas-mock .mock-meta .mm-dot {
+  display: inline-block;
+  width: 5px; height: 5px;
+  background: var(--colors-muted);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.canvas-mock .mock-zoom {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  z-index: 5;
+}
+
+.frame-card {
+  position: absolute;
+  background: var(--colors-paper);
+  border: 1px solid var(--colors-ink);
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  transition: border-color 280ms ease, box-shadow 280ms ease;
+}
+.frame-card .fc-chrome {
+  height: 18px;
+  border-bottom: 1px solid var(--colors-rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7px;
+  background: var(--colors-paper);
+  flex-shrink: 0;
+}
+.frame-card .fc-id {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 8px;
+  color: var(--colors-muted);
+  letter-spacing: 0.06em;
+  transition: color 280ms ease;
+}
+.frame-card .fc-refresh {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--colors-muted);
+  opacity: 0.6;
+  transition: background 280ms ease, opacity 280ms ease;
+}
+.frame-card .fc-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: var(--colors-paper);
+}
+
+.frame-card.produced {
+  border: 1.5px solid var(--colors-accent);
+  box-shadow: 0 0 0 3px var(--colors-accent-soft);
+  z-index: 3;
+}
+.frame-card.produced .fc-refresh {
+  background: var(--colors-accent);
+  opacity: 1;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.frame-card.produced .fc-id {
+  color: var(--colors-accent);
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+}
+.produced-badge {
+  position: absolute;
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 9px;
+  color: var(--colors-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 4;
+}
+.produced-badge::before {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--colors-accent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.mock-connector {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 360ms ease;
+}
+
+.mini-nav {
+  height: 10px;
+  border-bottom: 1px solid var(--colors-rule-soft);
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  gap: 4px;
+}
+.mini-nav span {
+  display: block;
+  width: 14px; height: 2px;
+  background: var(--colors-rule);
+}
+.mini-nav span.acc { background: var(--colors-accent); width: 10px; }
+
+.mini-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 8px 6px 6px;
+  height: calc(100% - 10px);
+}
+.mini-chart .bar {
+  flex: 1;
+  background: var(--colors-ink);
+  min-width: 0;
+}
+.mini-chart .bar.acc { background: var(--colors-accent); }
+.mini-chart .bar.muted { background: var(--colors-rule); }
+
+.mini-login {
+  padding: 8px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mini-login .title {
+  height: 5px;
+  width: 40%;
+  background: var(--colors-ink);
+  margin-bottom: 3px;
+}
+.mini-login .field {
+  height: 7px;
+  border: 1px solid var(--colors-rule);
+  background: var(--colors-paper-deep);
+}
+.mini-login .btn {
+  height: 8px;
+  background: var(--colors-ink);
+  width: 100%;
+  margin-top: 2px;
+}
+
+.mini-cards {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  height: 100%;
+}
+.mini-cards .card {
+  flex: 1;
+  border: 1px solid var(--colors-rule);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mini-cards .card .hd { height: 3px; width: 60%; background: var(--colors-ink); }
+.mini-cards .card .ln { height: 2px; background: var(--colors-rule); }
+.mini-cards .card .ln.s { width: 70%; }
+.mini-cards .card .ln.xs { width: 45%; }
+.mini-cards .card.acc { border-color: var(--colors-accent); }
+.mini-cards .card.acc .hd { background: var(--colors-accent); }
+
+.mini-mobile {
+  padding: 5px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.mini-mobile .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px;
+}
+.mini-mobile .stack .row {
+  height: 3px;
+  background: var(--colors-rule);
+}
+.mini-mobile .stack .row.s { width: 60%; }
+.mini-mobile .bottom-bar {
+  height: 12px;
+  border-top: 1px solid var(--colors-rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 6px;
+}
+.mini-mobile .bottom-bar .d {
+  width: 4px; height: 4px;
+  background: var(--colors-muted);
+  border-radius: 50%;
+}
+.mini-mobile .bottom-bar .d.acc {
+  background: var(--colors-accent);
+}
+
+.ctas {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+}
+.btn {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--colors-ink);
+  background: var(--colors-paper);
+  color: var(--colors-ink);
+  padding: 12px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1), background-color 220ms ease, color 220ms ease;
+  box-shadow: 4px 4px 0 var(--colors-ink);
+}
+.btn-primary {
+  background: var(--colors-ink);
+  color: var(--colors-paper);
+}
+.btn-primary:hover {
+  background: var(--colors-accent);
+  border-color: var(--colors-accent);
+  box-shadow: 4px 4px 0 var(--colors-ink);
+}
+.btn .arrow {
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.docs-link {
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-size: 14px;
+  color: var(--colors-ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: border-color 220ms ease, color 220ms ease;
+}
+.docs-link:hover { color: var(--colors-ink); border-bottom-color: var(--colors-ink); }
+
+.reveal { opacity: 0; animation: fade 360ms cubic-bezier(0.2,0.8,0.2,1) forwards; }
+.r1 { animation-delay: 0ms; }
+.r2 { animation-delay: 60ms; }
+.r3 { animation-delay: 120ms; }
+.r4 { animation-delay: 180ms; }
+.r5 { animation-delay: 240ms; }
+.r6 { animation-delay: 300ms; }
+.r7 { animation-delay: 360ms; }
+@keyframes fade { to { opacity: 1; } }
+
+@media (max-width: 720px) {
+  .stage { padding: 0 20px; }
+  .hero { padding: 24px 0 32px; }
+  .canvas-mock { display: none; }
+  .connector-wrap { display: none; }
+  .queue-items { gap: 8px; }
+  .queue-item { font-size: 10px; padding: 3px 8px; }
+  .ctas { flex-direction: column; gap: 16px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <nav class="topbar reveal r1">
+    <div class="wordmark">
+      <span class="glyph"></span>
+      OpenDesign
+    </div>
+    <a class="navlink" href="https://github.com/basta/OpenDesign">GitHub</a>
+  </nav>
+
+  <main class="hero">
+    <p class="eyebrow reveal r2">Claude · Canvas · CLI</p>
+
+    <div class="prompt-monument reveal r3" aria-label="Example prompt">
+      <span class="slash" id="slash">/frame</span><span class="prompt-text" id="prompt-text">a dashboard with revenue charts</span>
+    </div>
+
+    <div class="carousel-block reveal r4">
+      <div class="queue-label">queue</div>
+      <div class="queue-items" id="queue-items">
+        <div class="queue-item active" data-index="0">a dashboard with revenue charts</div>
+        <div class="queue-item" data-index="1">a login page with email + password</div>
+        <div class="queue-item" data-index="2">a pricing page with three tiers</div>
+        <div class="queue-item" data-index="3">a mobile nav with four tabs</div>
+      </div>
+    </div>
+
+    <div class="headline-block reveal r5">
+      <h1 class="head">One sentence in. <strong>A rendered frame out.</strong></h1>
+    </div>
+
+    <div class="connector-wrap reveal r6" aria-hidden="true">
+      <div class="connector-line"></div>
+    </div>
+
+    <div class="canvas-mock reveal r7" aria-label="A zoomed-out view of the OpenDesign canvas showing the frame produced by the prompt">
+      <span class="mock-meta"><span class="mm-dot"></span>opendesign · canvas</span>
+      <span class="mock-zoom">zoom 38%</span>
+
+      <svg id="connector-svg" class="mock-connector" style="left: 0; top: 0;" width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 1120 400">
+        <path id="connector-path"
+              d="M 560 0 L 560 60 L 720 60 L 720 130"
+              style="stroke: var(--colors-accent);"
+              stroke-width="1"
+              stroke-dasharray="3 4"
+              fill="none" />
+      </svg>
+
+      <div id="fc-pricing" class="frame-card" style="left: 40px; top: 58px; width: 180px; height: 120px;">
+        <div class="fc-chrome">
+          <span class="fc-id">pricing / v1</span>
+          <span class="fc-refresh"></span>
+        </div>
+        <div class="fc-body">
+          <div class="mini-cards">
+            <div class="card">
+              <div class="hd"></div>
+              <div class="ln"></div>
+              <div class="ln s"></div>
+              <div class="ln xs"></div>
+            </div>
+            <div class="card acc">
+              <div class="hd"></div>
+              <div class="ln"></div>
+              <div class="ln s"></div>
+              <div class="ln xs"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="fc-login" class="frame-card" style="left: 255px; top: 225px; width: 140px; height: 140px;">
+        <div class="fc-chrome">
+          <span class="fc-id">login / v2</span>
+          <span class="fc-refresh"></span>
+        </div>
+        <div class="fc-body">
+          <div class="mini-login">
+            <div class="title"></div>
+            <div class="field"></div>
+            <div class="field"></div>
+            <div class="btn"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="fc-dashboard" class="frame-card produced" style="left: 590px; top: 130px; width: 260px; height: 170px;">
+        <div class="fc-chrome">
+          <span class="fc-id">dashboard / new</span>
+          <span class="fc-refresh"></span>
+        </div>
+        <div class="fc-body">
+          <div class="mini-nav">
+            <span class="acc"></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="mini-chart">
+            <div class="bar muted" style="height: 30%"></div>
+            <div class="bar muted" style="height: 55%"></div>
+            <div class="bar" style="height: 42%"></div>
+            <div class="bar" style="height: 70%"></div>
+            <div class="bar acc" style="height: 88%"></div>
+            <div class="bar" style="height: 62%"></div>
+            <div class="bar muted" style="height: 48%"></div>
+            <div class="bar" style="height: 75%"></div>
+            <div class="bar acc" style="height: 95%"></div>
+            <div class="bar muted" style="height: 52%"></div>
+            <div class="bar" style="height: 68%"></div>
+            <div class="bar muted" style="height: 38%"></div>
+          </div>
+        </div>
+      </div>
+      <span id="produced-badge" class="produced-badge" style="left: 598px; top: 308px;">rendering… · just now</span>
+
+      <div id="fc-mobile" class="frame-card" style="left: 920px; top: 70px; width: 90px; height: 150px;">
+        <div class="fc-chrome">
+          <span class="fc-id">mobile / v1</span>
+          <span class="fc-refresh"></span>
+        </div>
+        <div class="fc-body">
+          <div class="mini-mobile">
+            <div class="stack">
+              <div class="row"></div>
+              <div class="row s"></div>
+              <div class="row"></div>
+              <div class="row s"></div>
+              <div class="row"></div>
+            </div>
+            <div class="bottom-bar">
+              <span class="d acc"></span>
+              <span class="d"></span>
+              <span class="d"></span>
+              <span class="d"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctas reveal r7">
+      <a class="btn btn-primary" href="https://github.com/basta/OpenDesign#installation">Install<span class="arrow">→</span></a>
+      <a class="docs-link" href="https://github.com/basta/OpenDesign#readme">Read the docs</a>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var VISIBLE = 3500;
+  var FADE    = 360;
+
+  var scenes = [
+    {
+      prompt:    'a dashboard with revenue charts',
+      frameId:   'fc-dashboard',
+      fcLabel:   'dashboard / new',
+      fcOrig:    'dashboard / v3',
+      badgeLeft: '598px', badgeTop: '308px',
+      path:      'M 560 0 L 560 60 L 720 60 L 720 130'
+    },
+    {
+      prompt:    'a login page with email + password',
+      frameId:   'fc-login',
+      fcLabel:   'login / new',
+      fcOrig:    'login / v2',
+      badgeLeft: '263px', badgeTop: '373px',
+      path:      'M 560 0 L 560 60 L 325 60 L 325 225'
+    },
+    {
+      prompt:    'a pricing page with three tiers',
+      frameId:   'fc-pricing',
+      fcLabel:   'pricing / new',
+      fcOrig:    'pricing / v1',
+      badgeLeft: '48px', badgeTop: '186px',
+      path:      'M 560 0 L 560 40 L 130 40 L 130 58'
+    },
+    {
+      prompt:    'a mobile nav with four tabs',
+      frameId:   'fc-mobile',
+      fcLabel:   'mobile / new',
+      fcOrig:    'mobile / v1',
+      badgeLeft: '928px', badgeTop: '228px',
+      path:      'M 560 0 L 560 55 L 965 55 L 965 70'
+    }
+  ];
+
+  var current   = 0;
+  var promptEl  = document.getElementById('prompt-text');
+  var slashEl   = document.getElementById('slash');
+  var connPath  = document.getElementById('connector-path');
+  var badgeEl   = document.getElementById('produced-badge');
+  var queueEl   = document.getElementById('queue-items');
+
+  function fcIdEl(frameId) {
+    return document.querySelector('#' + frameId + ' .fc-id');
+  }
+
+  function updateQueue(nextIdx) {
+    var items = queueEl.querySelectorAll('.queue-item');
+    items.forEach(function(item) {
+      item.classList.remove('active');
+    });
+    items[nextIdx].classList.add('active');
+  }
+
+  function doTransition() {
+    var next = (current + 1) % scenes.length;
+    var s    = scenes[next];
+
+    slashEl.style.color = 'var(--colors-accent-fade)';
+
+    setTimeout(function() {
+      promptEl.textContent = s.prompt;
+
+      document.getElementById(scenes[current].frameId).classList.remove('produced');
+      fcIdEl(scenes[current].frameId).textContent = scenes[current].fcOrig;
+      document.getElementById(s.frameId).classList.add('produced');
+      fcIdEl(s.frameId).textContent = s.fcLabel;
+
+      badgeEl.style.left = s.badgeLeft;
+      badgeEl.style.top  = s.badgeTop;
+
+      connPath.setAttribute('d', s.path);
+
+      updateQueue(next);
+
+      current = next;
+
+      slashEl.style.color = 'var(--colors-accent)';
+    }, FADE);
+
+    setTimeout(doTransition, VISIBLE + 2 * FADE);
+  }
+
+  setTimeout(doTransition, VISIBLE);
+})();
+</script>
+</body>
+</html>
