@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quickstart — OpenDesign</title>
+<meta name="description" content="Get OpenDesign running locally in under a minute, then explore frames, skills, tokens, and two-way sync." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --colors-paper: #f3f2ed;
+  --colors-paper-deep: #e7e5dc;
+  --colors-ink: #1c1720;
+  --colors-ink-soft: #3e3843;
+  --colors-muted: #908a95;
+  --colors-rule: #d9d6d1;
+  --colors-rule-soft: #e3e0da;
+  --colors-accent: #6a2b55;
+  --colors-accent-soft: rgba(106, 43, 85, 0.08);
+  --colors-accent-glow: rgba(106, 43, 85, 0.15);
+  --colors-dot: rgba(28, 23, 32, 0.08);
+
+  --typography-display-font-family: "Space Grotesk";
+  --typography-body-font-family: "Space Grotesk";
+  --typography-mono-font-family: "JetBrains Mono";
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--colors-paper);
+  color: var(--colors-ink);
+  font-family: var(--typography-body-font-family), ui-sans-serif, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(var(--colors-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+.stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 0 64px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Topbar ── */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0 20px;
+  border-bottom: 1px solid var(--colors-rule-soft);
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.015em;
+  color: var(--colors-ink);
+  text-decoration: none;
+}
+.wordmark .glyph {
+  width: 14px; height: 14px;
+  border: 1px solid var(--colors-ink);
+  position: relative;
+}
+.wordmark .glyph::after {
+  content: "";
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 6px; height: 6px;
+  background: var(--colors-accent);
+}
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.navlink {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--colors-ink-soft);
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 220ms ease, color 220ms ease;
+}
+.navlink:hover { color: var(--colors-ink); border-bottom-color: var(--colors-ink); }
+
+/* ── Hero ── */
+.hero {
+  padding: 64px 0 32px;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+}
+.eyebrow {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--colors-accent);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: var(--colors-accent);
+  display: block;
+}
+h1.title {
+  font-weight: 600;
+  font-size: clamp(32px, 4vw, 44px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--colors-ink);
+  margin-bottom: 18px;
+  max-width: 720px;
+}
+.lede {
+  font-weight: 300;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--colors-ink-soft);
+  max-width: 620px;
+}
+.lede strong { font-weight: 600; color: var(--colors-ink); }
+
+/* ── Steps ── */
+.steps-section {
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 48px 0 24px;
+}
+.section-eyebrow {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-eyebrow::before {
+  content: "";
+  width: 16px;
+  height: 1px;
+  background: var(--colors-rule);
+  display: block;
+}
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.step {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 20px;
+  align-items: start;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--colors-rule-soft);
+}
+.step:last-child { border-bottom: none; }
+.step-num {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--colors-accent);
+  padding-top: 6px;
+  border-right: 1px solid var(--colors-rule-soft);
+  padding-right: 16px;
+  text-align: right;
+}
+.step-body h3 {
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--colors-ink);
+  margin-bottom: 8px;
+}
+.step-body p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--colors-ink-soft);
+  margin-bottom: 14px;
+  max-width: 600px;
+}
+.step-body p:last-child { margin-bottom: 0; }
+.step-body code {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 13px;
+  background: var(--colors-paper-deep);
+  padding: 1px 6px;
+  border: 1px solid var(--colors-rule-soft);
+  color: var(--colors-ink);
+  white-space: nowrap;
+}
+
+/* ── Code block ── */
+.code-block {
+  background: var(--colors-ink);
+  color: var(--colors-paper);
+  padding: 18px 22px;
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  position: relative;
+  border: 1px solid var(--colors-ink);
+  box-shadow: 4px 4px 0 var(--colors-accent);
+}
+.code-block .c-comment { color: rgba(243, 242, 237, 0.45); }
+.code-block .c-cmd { color: var(--colors-paper); }
+.code-block .c-prompt { color: rgba(243, 242, 237, 0.55); user-select: none; }
+
+.note {
+  margin-top: 14px;
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--colors-muted);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.note::before {
+  content: "▸";
+  color: var(--colors-accent);
+  flex-shrink: 0;
+}
+
+/* ── Section ── */
+.section {
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 56px 0;
+  border-top: 1px solid var(--colors-rule-soft);
+}
+.section h2 {
+  font-weight: 600;
+  font-size: clamp(22px, 2.4vw, 28px);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 14px;
+  color: var(--colors-ink);
+}
+.section p {
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--colors-ink-soft);
+  max-width: 600px;
+  margin-bottom: 12px;
+}
+.section p:last-of-type { margin-bottom: 0; }
+
+/* ── Skill cards ── */
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-top: 28px;
+}
+.skill-card {
+  border: 1px solid var(--colors-rule);
+  background: var(--colors-paper);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 220ms ease, box-shadow 220ms ease;
+}
+.skill-card:hover {
+  border-color: var(--colors-accent);
+  box-shadow: 4px 4px 0 var(--colors-accent-glow);
+}
+.skill-name {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--colors-accent);
+  letter-spacing: -0.01em;
+}
+.skill-card h4 {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: var(--colors-ink);
+}
+.skill-card p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--colors-ink-soft);
+  max-width: none;
+  margin-bottom: 0;
+}
+
+/* ── Feature rows ── */
+.feature-rows {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+}
+.feature-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  padding: 18px 0;
+  border-top: 1px solid var(--colors-rule-soft);
+}
+.feature-row:last-child { border-bottom: 1px solid var(--colors-rule-soft); }
+.feature-tag {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  padding-top: 3px;
+}
+.feature-body h4 {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--colors-ink);
+  margin-bottom: 6px;
+}
+.feature-body p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--colors-ink-soft);
+  max-width: none;
+  margin-bottom: 0;
+}
+.feature-body code {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 12px;
+  background: var(--colors-paper-deep);
+  padding: 1px 5px;
+  border: 1px solid var(--colors-rule-soft);
+  color: var(--colors-ink);
+  white-space: nowrap;
+}
+.skill-card p code {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 12px;
+  background: var(--colors-paper-deep);
+  padding: 1px 5px;
+  border: 1px solid var(--colors-rule-soft);
+  color: var(--colors-ink);
+  white-space: nowrap;
+}
+
+/* ── Inline next ── */
+.next-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  margin-top: 36px;
+}
+.btn {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--colors-ink);
+  background: var(--colors-paper);
+  color: var(--colors-ink);
+  padding: 12px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1), background-color 220ms ease, color 220ms ease;
+  box-shadow: 4px 4px 0 var(--colors-ink);
+}
+.btn-primary {
+  background: var(--colors-ink);
+  color: var(--colors-paper);
+}
+.btn-primary:hover {
+  background: var(--colors-accent);
+  border-color: var(--colors-accent);
+}
+.btn .arrow {
+  font-family: var(--typography-body-font-family), sans-serif;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.next-link {
+  font-size: 14px;
+  color: var(--colors-ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: border-color 220ms ease, color 220ms ease;
+}
+.next-link:hover { color: var(--colors-ink); border-bottom-color: var(--colors-ink); }
+
+/* ── Footer ── */
+.footer {
+  border-top: 1px solid var(--colors-rule-soft);
+  padding: 28px 0 36px;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-left {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  color: var(--colors-muted);
+  letter-spacing: 0.06em;
+}
+.footer-right { display: flex; gap: 20px; }
+.footer-right a {
+  font-family: var(--typography-mono-font-family), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+  text-decoration: none;
+  transition: color 220ms ease;
+}
+.footer-right a:hover { color: var(--colors-ink); }
+
+/* ── Reveal ── */
+.reveal { opacity: 0; animation: fade 360ms cubic-bezier(0.2,0.8,0.2,1) forwards; }
+.r1 { animation-delay: 0ms; }
+.r2 { animation-delay: 60ms; }
+.r3 { animation-delay: 120ms; }
+.r4 { animation-delay: 180ms; }
+@keyframes fade { to { opacity: 1; } }
+
+@media (max-width: 720px) {
+  .stage { padding: 0 20px; }
+  .hero { padding: 32px 0 24px; }
+  .step { grid-template-columns: 1fr; gap: 8px; }
+  .step-num {
+    border-right: none;
+    border-bottom: 1px solid var(--colors-rule-soft);
+    text-align: left;
+    padding: 0 0 8px 0;
+    margin-bottom: 4px;
+  }
+  .skill-grid { grid-template-columns: 1fr; }
+  .feature-row { grid-template-columns: 1fr; gap: 6px; }
+  .feature-tag { padding-top: 0; }
+  .footer { flex-direction: column; gap: 16px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <nav class="topbar reveal r1">
+    <a class="wordmark" href="index.html">
+      <span class="glyph"></span>
+      OpenDesign
+    </a>
+    <div class="nav-links">
+      <a class="navlink" href="index.html">Home</a>
+      <a class="navlink" href="index.html#compare">Compare</a>
+      <a class="navlink" href="https://github.com/basta/OpenDesign">GitHub</a>
+    </div>
+  </nav>
+
+  <header class="hero reveal r2">
+    <p class="eyebrow">Quickstart</p>
+    <h1 class="title">From <code style="font-family: var(--typography-mono-font-family), monospace; font-weight: 500; color: var(--colors-accent);">git clone</code> to canvas in 30 seconds.</h1>
+    <p class="lede">OpenDesign is a local web app. Clone it, install dependencies, run the dev server. <strong>That's the whole setup.</strong> No accounts, no API keys, no cloud.</p>
+  </header>
+
+  <!-- ── Simple start ── -->
+  <section class="steps-section reveal r3">
+    <div class="section-eyebrow">Get running</div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h3>Clone, install, run.</h3>
+          <p>You need <code>git</code> and Node 20+. Everything else is local.</p>
+<pre class="code-block"><span class="c-prompt">$ </span><span class="c-cmd">git clone https://github.com/basta/OpenDesign.git</span>
+<span class="c-prompt">$ </span><span class="c-cmd">cd OpenDesign</span>
+<span class="c-prompt">$ </span><span class="c-cmd">npm install</span>
+<span class="c-prompt">$ </span><span class="c-cmd">npm run dev</span></pre>
+          <p class="note">Open <code>http://localhost:5173</code> in your browser.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h3>Create a project.</h3>
+          <p>The home screen is a project picker. Click <strong>New project</strong>, give it a name, and you'll land on an empty canvas. A project is just a directory on disk under <code>./projects/</code> &mdash; you can <code>ls</code> it, <code>git init</code> it, edit files in it.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h3>Describe a frame to your agent.</h3>
+          <p>Open Claude Code (or Cursor, Windsurf, aider, opencode, Gemini CLI &mdash; anything that can write a file) inside the OpenDesign repo and run:</p>
+<pre class="code-block"><span class="c-prompt">&gt; </span><span class="c-cmd">/frame my-app a dashboard with revenue charts</span></pre>
+          <p>The syntax is <code>/frame [project] [description]</code>. The agent takes a moment to think through the design, then writes an HTML file to disk &mdash; the canvas picks it up the instant the file lands. Drag it, resize it, rename it from the canvas, or open the HTML file in your editor. Changes go both ways.</p>
+          <p class="note">The skill ships preconfigured for Claude Code, opencode, Codex, and Gemini CLI &mdash; pick whichever matches your agent.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Skills ── -->
+  <section class="section reveal r4">
+    <div class="section-eyebrow">Then what</div>
+    <h2>Five skills do the heavy lifting.</h2>
+    <p>Each one is a slash command your agent can run. They're plain Markdown files; read them, fork them, replace them.</p>
+
+    <div class="skill-grid">
+      <div class="skill-card">
+        <span class="skill-name">/frame</span>
+        <h4>Create or update one frame.</h4>
+        <p>Reads the project's design tokens, picks a non-overlapping spot on the canvas, writes a self-contained HTML file, updates the manifest. Your default move.</p>
+      </div>
+      <div class="skill-card">
+        <span class="skill-name">/frontend-design</span>
+        <h4>Commit to a bold direction.</h4>
+        <p>The aesthetic advisor. Picks typography, color, motion, composition, and writes them into <code>DESIGN.md</code> and <code>FEEL.md</code> so every later frame is consistent.</p>
+      </div>
+      <div class="skill-card">
+        <span class="skill-name">/port</span>
+        <h4>Bring an existing app in.</h4>
+        <p>Crawls another codebase, identifies its screens, extracts its aesthetic, and dispatches parallel subagents to port each screen as a redesignable frame. <code>--redesign</code> commits a fresh direction.</p>
+      </div>
+      <div class="skill-card">
+        <span class="skill-name">/alternatives</span>
+        <h4>Compare N takes side by side.</h4>
+        <p>Generates parallel design variants of a frame so you can shop for one. Auto-picks <em>execution-shopping</em> (layout variants) or <em>direction-shopping</em> (aesthetic variants) based on whether <code>DESIGN.md</code> is filled.</p>
+      </div>
+      <div class="skill-card">
+        <span class="skill-name">/suggest</span>
+        <h4>Curated token tweaks.</h4>
+        <p>Drops three named palette or typography variants into the Tokens panel. Preview each one live, apply with one click.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ── -->
+  <section class="section">
+    <div class="section-eyebrow">Other things worth knowing</div>
+    <h2>The boring power-tools.</h2>
+    <p>None of this is required to get started, but it's where the workflow gets fast.</p>
+
+    <div class="feature-rows">
+
+      <div class="feature-row">
+        <div class="feature-tag">Tokens panel</div>
+        <div class="feature-body">
+          <h4>Live design token editor.</h4>
+          <p>The right edge of the canvas opens a panel showing every token in <code>DESIGN.md</code> &mdash; colors, typography, spacing, rounded, components. Edit them in place, preview instantly across all frames, commit back to <code>DESIGN.md</code> when you're happy.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-tag">Two-way sync</div>
+        <div class="feature-body">
+          <h4>Disk &harr; canvas, both directions.</h4>
+          <p>The dev server watches your project with chokidar and streams changes over SSE. Anything an agent (or you, in vim) writes to disk reflects on the canvas the moment the file is saved; anything you do on the canvas (drag, resize, rename, delete) writes back to disk.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-tag">Multi-agent</div>
+        <div class="feature-body">
+          <h4>Bring your own agent.</h4>
+          <p>Skills are mirrored for Claude Code (<code>.claude/skills/</code>), opencode (<code>.opencode/commands/</code>), Codex (via <code>AGENTS.md</code>), and Gemini CLI (<code>.gemini/commands/</code>). Or write your own &mdash; anything that can <code>POST</code> to <code>/api/projects/:id/frames</code> can put a frame on the canvas.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-tag">Custom root</div>
+        <div class="feature-body">
+          <h4>Projects live wherever you want.</h4>
+          <p>By default projects go in <code>./projects/</code> (gitignored). Point that elsewhere with <code>PROJECTS_ROOT=/your/path npm run dev</code> &mdash; useful for keeping designs in their own repo, separate from OpenDesign itself.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-tag">Git workflow</div>
+        <div class="feature-body">
+          <h4>Designs are diffs.</h4>
+          <p>Every frame is an HTML file. The manifest is JSON. The layout is JSON. Branch a redesign, open a PR with the rendered frames, review changes line by line. Merge conflicts on a button color resolve with <code>git merge</code>.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-tag">HTTP API</div>
+        <div class="feature-body">
+          <h4>Drive it from a script.</h4>
+          <p>Create / rename / move / delete frames with plain HTTP at <code>/api/projects/:id/...</code>. Subscribe to filesystem changes via SSE at <code>/api/projects/:id/events</code>. The full table is in the README.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="next-row">
+      <a class="btn btn-primary" href="https://github.com/basta/OpenDesign">Source on GitHub<span class="arrow">&rarr;</span></a>
+      <a class="next-link" href="https://github.com/basta/OpenDesign#readme">Read the full README</a>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="footer-left">OpenDesign &middot; MIT License</div>
+    <div class="footer-right">
+      <a href="index.html">Home</a>
+      <a href="https://github.com/basta/OpenDesign">GitHub</a>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
