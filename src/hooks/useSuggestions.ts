@@ -1,31 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { fetchSuggestions, type Suggestion } from '../lib/api'
+import { useProjectEvent } from '../lib/projectEvents'
 
 export function useSuggestions(projectId: string): { suggestions: Suggestion[] } {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
 
-  useEffect(() => {
-    let cancelled = false
-
-    const reload = async () => {
-      try {
-        const { suggestions: list } = await fetchSuggestions(projectId)
-        if (!cancelled) setSuggestions(list)
-      } catch {
-        /* ignore */
-      }
-    }
-
-    reload()
-
-    const source = new EventSource(`/api/projects/${projectId}/events`)
-    source.addEventListener('suggestions-changed', () => { reload() })
-
-    return () => {
-      cancelled = true
-      source.close()
+  const reload = useCallback(async () => {
+    try {
+      const { suggestions: list } = await fetchSuggestions(projectId)
+      setSuggestions(list)
+    } catch {
+      /* ignore */
     }
   }, [projectId])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  useProjectEvent('suggestions-changed', () => { reload() })
 
   return { suggestions }
 }

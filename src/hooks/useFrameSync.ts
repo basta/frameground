@@ -3,6 +3,7 @@ import type { Node } from '@xyflow/react'
 import { HTML_FRAME_TYPE } from '../shapes/HtmlFrameShape'
 import { getLayout, getManifest } from '../lib/api'
 import { DEFAULT_LAYOUT, type FrameEntry, type Layout } from '../lib/manifest'
+import { useProjectEvent } from '../lib/projectEvents'
 
 type SetNodes = React.Dispatch<React.SetStateAction<Node[]>>
 
@@ -79,21 +80,19 @@ export function useFrameSync(projectId: string, setNodes: SetNodes) {
       })
       .catch(() => { if (!cancelled) setLoading(false) })
 
-    const source = new EventSource(`/api/projects/${projectId}/events`)
-    source.addEventListener('manifest-changed', () => { reconcileManifest() })
-    source.addEventListener('layout-changed', () => { reconcileLayout() })
-    source.addEventListener('file-changed', (e) => {
-      try {
-        const data = JSON.parse((e as MessageEvent).data) as { frameId?: string }
-        if (data.frameId) bumpFileVersion(data.frameId)
-      } catch { /* ignore */ }
-    })
-
     return () => {
       cancelled = true
-      source.close()
     }
-  }, [projectId, setNodes, reconcileManifest, reconcileLayout, bumpFileVersion])
+  }, [projectId, setNodes])
+
+  useProjectEvent('manifest-changed', () => { reconcileManifest() })
+  useProjectEvent('layout-changed', () => { reconcileLayout() })
+  useProjectEvent('file-changed', (e) => {
+    try {
+      const data = JSON.parse(e.data) as { frameId?: string }
+      if (data.frameId) bumpFileVersion(data.frameId)
+    } catch { /* ignore */ }
+  })
 
   return { loading }
 }

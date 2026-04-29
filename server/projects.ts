@@ -168,3 +168,10 @@ export function resolveFrameFile(projectId: string, file: string): string | null
   if (!resolved.startsWith(dir + path.sep)) return null
   return resolved
 }
+
+export function resolveProjectPath(projectId: string, p: string): string | null {
+  const dir = projectDir(projectId)
+  const resolved = path.isAbsolute(p) ? path.resolve(p) : path.resolve(dir, p)
+  if (resolved !== dir && !resolved.startsWith(dir + path.sep)) return null
+  return resolved
+}

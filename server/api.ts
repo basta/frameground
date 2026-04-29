@@ -7,6 +7,7 @@ import { patchLayoutEntry, readLayout, removeLayoutEntry } from './layout.ts'
 import { readProjectDesign, tokensToCss, writeDesignTokens } from './design.ts'
 import { isValidSuggestionId, listSuggestions, removeSuggestion } from './suggestions.ts'
 import { subscribe } from './watcher.ts'
+import { promptChat, cancelChat, respondPermission, subscribeChat } from './acp.ts'
 import type { FrameEntry, LayoutEntry } from './types.ts'
 
 type Handler = (req: IncomingMessage, res: ServerResponse, match: RegExpMatchArray) => Promise<void> | void
@@ -253,6 +254,67 @@ const routes: { method: string; pattern: RegExp; handler: Handler }[] = [
       res.setHeader('Connection', 'keep-alive')
       res.write(': connected\n\n')
       const ok = subscribe(id, res)
+      if (!ok) { res.end(); return }
+    },
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/projects\/([^/]+)\/chat\/prompt$/,
+    handler: async (req, res, m) => {
+      const [, id] = m
+      console.log(`[api] POST /chat/prompt project=${id}`)
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      const body = (await readBody(req)) as { text?: unknown }
+      const text = asString(body.text)
+      if (!text || !text.trim()) return error(res, 400, 'text required')
+      promptChat(id, text).catch(() => {})
+      json(res, 200, { ok: true })
+    },
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/projects\/([^/]+)\/chat\/cancel$/,
+    handler: async (_req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      await cancelChat(id)
+      json(res, 200, { ok: true })
+    },
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/projects\/([^/]+)\/chat\/permission$/,
+    handler: async (req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      const body = (await readBody(req)) as { requestId?: unknown; optionId?: unknown; cancelled?: unknown }
+      const requestId = asString(body.requestId)
+      if (!requestId) return error(res, 400, 'requestId required')
+      const outcome = body.cancelled === true
+        ? { outcome: 'cancelled' as const }
+        : (() => {
+            const optionId = asString(body.optionId)
+            if (!optionId) return null
+            return { outcome: 'selected' as const, optionId }
+          })()
+      if (!outcome) return error(res, 400, 'optionId or cancelled required')
+      const ok = respondPermission(id, requestId, outcome)
+      if (!ok) return error(res, 404, 'Pending permission not found')
+      json(res, 200, { ok: true })
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/projects\/([^/]+)\/chat\/events$/,
+    handler: (_req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) { error(res, 404, 'Project not found'); return }
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'text/event-stream')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.setHeader('Connection', 'keep-alive')
+      res.write(': connected\n\n')
+      const ok = subscribeChat(id, res)
       if (!ok) { res.end(); return }
     },
   },

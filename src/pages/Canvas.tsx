@@ -17,7 +17,9 @@ import { useTokenSync } from '../hooks/useTokenSync'
 import { useDesignDoc } from '../hooks/useDesignDoc'
 import { useSuggestions } from '../hooks/useSuggestions'
 import { TokensSyncContext } from '../context/TokensSyncContext'
+import { ProjectEventsProvider } from '../lib/projectEvents'
 import { TokensPanel } from '../components/TokensPanel'
+import { ChatDock } from '../components/ChatDock'
 import { HelperLines } from '../components/HelperLines'
 import { deleteFrame, dismissSuggestion, patchLayout } from '../lib/api'
 import { getHelperLines, SNAP_PX } from '../lib/helperLines'
@@ -91,9 +93,10 @@ function CanvasInner({ projectId }: { projectId: string }) {
   const { design } = useDesignDoc(projectId)
   const { suggestions } = useSuggestions(projectId)
   const writeLayout = useLayoutWriter(projectId)
-  const { getNodes, getViewport } = useReactFlow()
+  const { getNodes, getViewport, fitView } = useReactFlow()
 
   const [panelOpen, setPanelOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const [overrides, setOverrides] = useState<Map<string, string>>(new Map())
   const [helperLines, setHelperLines] = useState<{ horizontal?: number; vertical?: number }>({})
 
@@ -135,16 +138,26 @@ function CanvasInner({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 't' && e.key !== 'T') return
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      e.preventDefault()
-      setPanelOpen(o => !o)
+      if (e.key === 't' || e.key === 'T') {
+        e.preventDefault()
+        setPanelOpen(o => !o)
+      } else if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault()
+        setChatOpen(o => !o)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  const jumpToFrame = useCallback((frameId: string) => {
+    fitView({ nodes: [{ id: frameId }], duration: 400, maxZoom: 1.2 })
+  }, [fitView])
+
+  const frameIds = useMemo(() => nodes.map(n => n.id), [nodes])
 
   const wrappedOnNodesChange = useCallback((changes: NodeChange[]) => {
     let nextLines: { horizontal?: number; vertical?: number } | null = null
@@ -224,20 +237,20 @@ function CanvasInner({ projectId }: { projectId: string }) {
           }}
         >
           {loading && <span style={{ fontSize: 13, color: '#666' }}>Loading…</span>}
+          {!chatOpen && (
+            <button
+              onClick={() => setChatOpen(true)}
+              title="Chat (C)"
+              style={toolbarBtnStyle}
+            >
+              Chat
+            </button>
+          )}
           {!panelOpen && (
             <button
               onClick={() => setPanelOpen(true)}
               title="Tokens (T)"
-              style={{
-                background: 'rgba(255,255,255,0.9)',
-                border: '1px solid #d8d8d8',
-                borderRadius: 6,
-                padding: '6px 10px',
-                fontSize: 12,
-                cursor: 'pointer',
-                fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-              }}
+              style={toolbarBtnStyle}
             >
               Tokens
             </button>
@@ -282,17 +295,38 @@ function CanvasInner({ projectId }: { projectId: string }) {
           onClose={() => setPanelOpen(false)}
         />
       )}
+      {chatOpen && (
+        <ChatDock
+          projectId={projectId}
+          frameIds={frameIds}
+          onClose={() => setChatOpen(false)}
+          onJumpToFrame={jumpToFrame}
+        />
+      )}
     </div>
     </TokensSyncContext.Provider>
   )
+}
+
+const toolbarBtnStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.9)',
+  border: '1px solid #d8d8d8',
+  borderRadius: 6,
+  padding: '6px 10px',
+  fontSize: 12,
+  cursor: 'pointer',
+  fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
 }
 
 export function Canvas() {
   const { projectId } = useParams<{ projectId: string }>()
   if (!projectId) return <div>Missing project id</div>
   return (
-    <ReactFlowProvider key={projectId}>
-      <CanvasInner projectId={projectId} />
-    </ReactFlowProvider>
+    <ProjectEventsProvider projectId={projectId}>
+      <ReactFlowProvider key={projectId}>
+        <CanvasInner projectId={projectId} />
+      </ReactFlowProvider>
+    </ProjectEventsProvider>
   )
 }
