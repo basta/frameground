@@ -87,16 +87,42 @@ function HtmlFrameNodeComponent({ id, data, selected }: NodeProps) {
           <span
             onDoubleClick={handleEditName}
             style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#333',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 8,
+              flex: 1,
+              minWidth: 0,
               cursor: 'default',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
             }}
           >
-            {frameData.name}
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#333',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              {frameData.name}
+            </span>
+            <span
+              title={frameData.file}
+              style={{
+                fontSize: 11,
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                color: '#999',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0,
+              }}
+            >
+              {frameData.file}
+            </span>
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <button

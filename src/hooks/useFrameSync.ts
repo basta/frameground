@@ -15,6 +15,7 @@ function buildNode(projectId: string, entry: FrameEntry, layout = DEFAULT_LAYOUT
     style: { width: layout.w, height: layout.h + 32 },
     data: {
       name: entry.name,
+      file: entry.file,
       url: `/frames/${projectId}/${entry.file}?v=${version}`,
       editMode: false,
     },
@@ -33,7 +34,7 @@ export function useFrameSync(projectId: string, setNodes: SetNodes) {
         const existing = byId.get(entry.id)
         const l = layout[entry.id] ?? DEFAULT_LAYOUT
         if (existing) {
-          return { ...existing, data: { ...existing.data, name: entry.name } }
+          return { ...existing, data: { ...existing.data, name: entry.name, file: entry.file } }
         }
         return buildNode(projectId, entry, l)
       })
