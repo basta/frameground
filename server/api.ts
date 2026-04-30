@@ -7,7 +7,7 @@ import { patchLayoutEntry, readLayout, removeLayoutEntry } from './layout.ts'
 import { readProjectDesign, tokensToCss, writeDesignTokens } from './design.ts'
 import { isValidSuggestionId, listSuggestions, removeSuggestion } from './suggestions.ts'
 import { subscribe } from './watcher.ts'
-import { promptChat, cancelChat, respondPermission, subscribeChat } from './acp.ts'
+import { promptChat, cancelChat, resetChat, respondPermission, subscribeChat } from './acp.ts'
 import type { FrameEntry, LayoutEntry } from './types.ts'
 
 type Handler = (req: IncomingMessage, res: ServerResponse, match: RegExpMatchArray) => Promise<void> | void
@@ -278,6 +278,16 @@ const routes: { method: string; pattern: RegExp; handler: Handler }[] = [
       const [, id] = m
       if (!projectExists(id)) return error(res, 404, 'Project not found')
       await cancelChat(id)
+      json(res, 200, { ok: true })
+    },
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/projects\/([^/]+)\/chat\/reset$/,
+    handler: (_req, res, m) => {
+      const [, id] = m
+      if (!projectExists(id)) return error(res, 404, 'Project not found')
+      resetChat(id)
       json(res, 200, { ok: true })
     },
   },

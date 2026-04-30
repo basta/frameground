@@ -20,6 +20,7 @@ export type ChatEvent =
   | { type: 'turn_ended'; stopReason: string; ts: number }
   | { type: 'agent_error'; message: string; ts: number }
   | { type: 'agent_exited'; code: number | null; ts: number }
+  | { type: 'chat_reset'; ts: number }
 
 export type PermissionResponse =
   | { cancelled: true }
@@ -46,6 +47,10 @@ export function sendChat(projectId: string, text: string): Promise<{ ok: true }>
 
 export function cancelChat(projectId: string): Promise<{ ok: true }> {
   return req(`/api/projects/${projectId}/chat/cancel`, { method: 'POST' })
+}
+
+export function resetChat(projectId: string): Promise<{ ok: true }> {
+  return req(`/api/projects/${projectId}/chat/reset`, { method: 'POST' })
 }
 
 export function respondPermission(

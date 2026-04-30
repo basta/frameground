@@ -65,6 +65,7 @@ type ServerEvent =
   | { type: 'turn_ended'; stopReason: string; ts: number }
   | { type: 'agent_error'; message: string; ts: number }
   | { type: 'agent_exited'; code: number | null; ts: number }
+  | { type: 'chat_reset'; ts: number }
 
 type Channel = {
   subs: Set<ServerResponse>
@@ -343,6 +344,18 @@ export async function cancelChat(projectId: string): Promise<void> {
   if (!session) return
   dbg(projectId, `cancel → session=${session.sessionId}`)
   await session.conn.cancel({ sessionId: session.sessionId })
+}
+
+export function resetChat(projectId: string): void {
+  const channel = channels.get(projectId)
+  if (!channel) return
+  const session = channel.session
+  if (session) {
+    dbg(projectId, `reset → killing session=${session.sessionId}`)
+    session.child.kill()
+  }
+  channel.log = []
+  pushEvent(channel, { type: 'chat_reset', ts: now() })
 }
 
 export function respondPermission(

@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
   cancelChat,
+  resetChat,
   respondPermission,
   sendChat,
   type ChatEvent,
@@ -47,20 +48,30 @@ interface ViewModel {
   agentBusy: boolean
   lastError: string | null
   exited: boolean
+  usage: { used: number; size: number } | null
 }
 
 function computeViewModel(events: ChatEvent[]): ViewModel {
-  const items: Item[] = []
-  const toolIdx = new Map<string, number>()
+  let items: Item[] = []
+  let toolIdx = new Map<string, number>()
   let userCounter = 0
   let agentCounter = 0
   let pendingPermission: ViewModel['pendingPermission'] = null
   let agentBusy = false
   let lastError: string | null = null
   let exited = false
+  let usage: ViewModel['usage'] = null
 
   for (const event of events) {
-    if (event.type === 'user_message') {
+    if (event.type === 'chat_reset') {
+      items = []
+      toolIdx = new Map()
+      pendingPermission = null
+      agentBusy = false
+      lastError = null
+      exited = false
+      usage = null
+    } else if (event.type === 'user_message') {
       items.push({ kind: 'user', id: `u-${userCounter++}-${event.ts}`, text: event.text })
       agentBusy = true
       lastError = null
@@ -100,6 +111,8 @@ function computeViewModel(events: ChatEvent[]): ViewModel {
           locations: update.locations ?? existing.locations,
           content: update.content ?? existing.content,
         }
+      } else if (update.sessionUpdate === 'usage_update') {
+        usage = { used: update.used, size: update.size }
       }
     } else if (event.type === 'permission_request') {
       pendingPermission = { requestId: event.requestId, toolCall: event.toolCall, options: event.options }
@@ -119,7 +132,16 @@ function computeViewModel(events: ChatEvent[]): ViewModel {
     }
   }
 
-  return { items, pendingPermission, agentBusy, lastError, exited }
+  return { items, pendingPermission, agentBusy, lastError, exited, usage }
+}
+
+function formatTokens(n: number): string {
+  if (n < 1000) return String(n)
+  if (n < 1_000_000) {
+    const k = n / 1000
+    return (k < 10 ? k.toFixed(1) : Math.round(k).toString()) + 'k'
+  }
+  return (n / 1_000_000).toFixed(1) + 'M'
 }
 
 function frameIdFromPath(p: string, frameIds: Set<string>): string | null {
@@ -212,6 +234,14 @@ export function ChatDock({ projectId, frameIds, onClose, onJumpToFrame }: Props)
     }
   }, [projectId])
 
+  const handleReset = useCallback(async () => {
+    try {
+      await resetChat(projectId)
+    } catch {
+      // ignore
+    }
+  }, [projectId])
+
   const handlePermission = useCallback(
     async (response: { optionId: string } | { cancelled: true }) => {
       const pending = view.pendingPermission
@@ -231,11 +261,23 @@ export function ChatDock({ projectId, frameIds, onClose, onJumpToFrame }: Props)
     <aside style={panelStyle}>
       <style>{MARKDOWN_CSS}</style>
       <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{ fontWeight: 600, fontSize: 13 }}>Chat</span>
-          <span style={{ fontSize: 11, color: '#888' }}>{projectId}</span>
+          <span style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {projectId}
+          </span>
+          {view.usage && <ContextChip usage={view.usage} />}
         </div>
-        <button onClick={onClose} title="Close (C)" style={iconBtnStyle}>×</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <button
+            onClick={handleReset}
+            title="Reset context (clears chat & restarts agent)"
+            style={iconBtnStyle}
+          >
+            ↻
+          </button>
+          <button onClick={onClose} title="Close (C)" style={iconBtnStyle}>×</button>
+        </div>
       </header>
 
       {view.exited && (
@@ -321,6 +363,28 @@ export function ChatDock({ projectId, frameIds, onClose, onJumpToFrame }: Props)
         </div>
       </footer>
     </aside>
+  )
+}
+
+function ContextChip({ usage }: { usage: { used: number; size: number } }) {
+  const pct = usage.size > 0 ? Math.min(100, (usage.used / usage.size) * 100) : 0
+  const color = pct >= 90 ? '#c33' : pct >= 70 ? '#b56b00' : '#666'
+  return (
+    <span
+      title={`${usage.used.toLocaleString()} / ${usage.size.toLocaleString()} tokens (${pct.toFixed(1)}%)`}
+      style={{
+        fontSize: 10,
+        color,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        padding: '1px 5px',
+        background: '#f4f4f2',
+        borderRadius: 3,
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+      }}
+    >
+      {formatTokens(usage.used)}/{formatTokens(usage.size)}
+    </span>
   )
 }
 
