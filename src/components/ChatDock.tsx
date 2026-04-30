@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   cancelChat,
   respondPermission,
@@ -227,6 +229,7 @@ export function ChatDock({ projectId, frameIds, onClose, onJumpToFrame }: Props)
 
   return (
     <aside style={panelStyle}>
+      <style>{MARKDOWN_CSS}</style>
       <header style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontWeight: 600, fontSize: 13 }}>Chat</span>
@@ -262,8 +265,8 @@ export function ChatDock({ projectId, frameIds, onClose, onJumpToFrame }: Props)
           }
           if (item.kind === 'agent') {
             return (
-              <div key={item.id} style={agentBubbleStyle}>
-                {item.text}
+              <div key={item.id} style={agentBubbleStyle} className="od-md">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.text}</ReactMarkdown>
               </div>
             )
           }
@@ -504,9 +507,64 @@ const agentBubbleStyle: React.CSSProperties = {
   padding: '6px 10px',
   borderRadius: 8,
   fontSize: 12,
-  whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
 }
+
+const MARKDOWN_CSS = `
+.od-md > :first-child { margin-top: 0; }
+.od-md > :last-child { margin-bottom: 0; }
+.od-md p { margin: 0 0 6px; line-height: 1.5; }
+.od-md p:last-child { margin-bottom: 0; }
+.od-md h1, .od-md h2, .od-md h3, .od-md h4, .od-md h5, .od-md h6 {
+  margin: 8px 0 4px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.od-md h1 { font-size: 15px; }
+.od-md h2 { font-size: 14px; }
+.od-md h3 { font-size: 13px; }
+.od-md h4, .od-md h5, .od-md h6 { font-size: 12px; }
+.od-md ul, .od-md ol { margin: 0 0 6px; padding-left: 18px; }
+.od-md li { margin: 2px 0; }
+.od-md code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  background: #f4f4f2;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.od-md pre {
+  background: #f4f4f2;
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin: 4px 0 6px;
+  overflow-x: auto;
+}
+.od-md pre code { background: none; padding: 0; }
+.od-md blockquote {
+  margin: 4px 0 6px;
+  padding-left: 8px;
+  border-left: 2px solid #e0e0e0;
+  color: #666;
+}
+.od-md a { color: #2A4DFF; text-decoration: underline; }
+.od-md hr { border: none; border-top: 1px solid #e8e8e8; margin: 8px 0; }
+.od-md table {
+  border-collapse: collapse;
+  margin: 4px 0 6px;
+  font-size: 11px;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.od-md th, .od-md td {
+  border: 1px solid #e0e0e0;
+  padding: 3px 6px;
+  text-align: left;
+}
+.od-md th { background: #f4f4f2; font-weight: 600; }
+.od-md img { max-width: 100%; }
+`
 const toolCardStyle: React.CSSProperties = {
   background: '#fff',
   border: '1px solid #e8e8e8',
