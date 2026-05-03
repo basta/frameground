@@ -133,7 +133,7 @@ body::before {
 
 .prompt-monument {
   text-align: center;
-  margin-bottom: 0;
+  margin-bottom: 22px;
   letter-spacing: -0.015em;
   line-height: 1.1;
 }
@@ -144,7 +144,6 @@ body::before {
   font-size: clamp(28px, 3.4vw, 38px);
   margin-right: 14px;
   display: inline-block;
-  transition: color 360ms cubic-bezier(0.2,0.8,0.2,1);
 }
 .prompt-monument .prompt-text {
   font-family: var(--typography-mono-font-family), monospace;
@@ -154,54 +153,10 @@ body::before {
   letter-spacing: -0.01em;
 }
 
-.carousel-block {
-  margin-bottom: 28px;
-  margin-top: 18px;
-  text-align: center;
-  min-height: 60px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 8px;
-}
-.queue-label {
-  font-family: var(--typography-mono-font-family), monospace;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--colors-muted);
-  opacity: 0.6;
-}
-.queue-items {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.queue-item {
-  font-family: var(--typography-mono-font-family), monospace;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--colors-ink-soft);
-  padding: 4px 10px;
-  border: 1px solid var(--colors-rule);
-  border-radius: 0;
-  background: var(--colors-paper);
-  transition: all 320ms cubic-bezier(0.2,0.8,0.2,1);
-  opacity: 0.5;
-}
-.queue-item.active {
-  border: 1px solid var(--colors-accent);
-  background: var(--colors-paper);
-  color: var(--colors-accent);
-  opacity: 1;
-  box-shadow: 0 0 0 2px var(--colors-accent-soft);
-}
-
 .headline-block {
   text-align: center;
   max-width: 620px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 h1.head {
   font-family: var(--typography-body-font-family), sans-serif;
@@ -214,23 +169,6 @@ h1.head {
 h1.head strong {
   font-weight: 600;
   color: var(--colors-ink);
-}
-
-.connector-wrap {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
-  position: relative;
-  height: 20px;
-}
-.connector-line {
-  position: relative;
-  width: 1px;
-  height: 100%;
-  background-image: linear-gradient(to bottom, var(--colors-rule) 50%, transparent 50%);
-  background-size: 1px 4px;
-  background-repeat: repeat-y;
 }
 
 /* ── Video hero ── */
@@ -616,10 +554,7 @@ h1.head strong {
 @media (max-width: 720px) {
   .stage { padding: 0 20px; }
   .hero { padding: 24px 0 32px; }
-  .connector-wrap { display: none; }
   .video-frame { box-shadow: 4px 4px 0 var(--colors-accent-glow); }
-  .queue-items { gap: 8px; }
-  .queue-item { font-size: 10px; padding: 3px 8px; }
   .ctas { flex-direction: column; gap: 16px; align-items: flex-start; }
   .pillars { grid-template-columns: 1fr; gap: 28px; }
   .section { padding: 48px 0; }
@@ -651,28 +586,14 @@ h1.head strong {
     <p class="eyebrow reveal r2">Open Source &middot; Local-First &middot; Agent-Agnostic</p>
 
     <div class="prompt-monument reveal r3" aria-label="Example prompt">
-      <span class="slash" id="slash">/frame</span><span class="prompt-text" id="prompt-text">a dashboard with revenue charts</span>
+      <span class="slash">/frame</span><span class="prompt-text">a dashboard with revenue charts</span>
     </div>
 
-    <div class="carousel-block reveal r4">
-      <div class="queue-label">queue</div>
-      <div class="queue-items" id="queue-items">
-        <div class="queue-item active" data-index="0">a dashboard with revenue charts</div>
-        <div class="queue-item" data-index="1">a login page with email + password</div>
-        <div class="queue-item" data-index="2">a pricing page with three tiers</div>
-        <div class="queue-item" data-index="3">a mobile nav with four tabs</div>
-      </div>
-    </div>
-
-    <div class="headline-block reveal r5">
+    <div class="headline-block reveal r4">
       <h1 class="head">The open source AI design tool. <strong>One sentence in, a rendered frame out.</strong></h1>
     </div>
 
-    <div class="connector-wrap reveal r6" aria-hidden="true">
-      <div class="connector-line"></div>
-    </div>
-
-    <div class="video-hero reveal r7" aria-label="Frameground app demo">
+    <div class="video-hero reveal r5" aria-label="Frameground app demo">
       <div class="video-frame">
         <div class="vh-chrome">
           <span class="vh-id"><span class="vh-dot"></span>my-app &middot; canvas</span>
@@ -686,7 +607,7 @@ h1.head strong {
       </div>
     </div>
 
-    <div class="ctas reveal r7">
+    <div class="ctas reveal r6">
       <a class="btn btn-primary" href="quickstart.html">Quickstart<span class="arrow">&rarr;</span></a>
       <a class="docs-link" href="https://github.com/basta/OpenDesign#readme">Read the docs</a>
     </div>
@@ -872,45 +793,6 @@ h1.head strong {
 
 <script>
 (function(){
-  /* ── Prompt + queue carousel ── */
-  var VISIBLE = 3500;
-  var FADE    = 360;
-
-  var prompts = [
-    'a dashboard with revenue charts',
-    'a login page with email + password',
-    'a pricing page with three tiers',
-    'a mobile nav with four tabs'
-  ];
-
-  var current  = 0;
-  var promptEl = document.getElementById('prompt-text');
-  var slashEl  = document.getElementById('slash');
-  var queueEl  = document.getElementById('queue-items');
-
-  function updateQueue(idx) {
-    var items = queueEl.querySelectorAll('.queue-item');
-    items.forEach(function(item) { item.classList.remove('active'); });
-    items[idx].classList.add('active');
-  }
-
-  function doTransition() {
-    var next = (current + 1) % prompts.length;
-
-    slashEl.style.color = 'var(--colors-accent-fade)';
-
-    setTimeout(function() {
-      promptEl.textContent = prompts[next];
-      updateQueue(next);
-      current = next;
-      slashEl.style.color = 'var(--colors-accent)';
-    }, FADE);
-
-    setTimeout(doTransition, VISIBLE + 2 * FADE);
-  }
-
-  setTimeout(doTransition, VISIBLE);
-
   /* ── FAQ accordion ── */
   document.querySelectorAll('.faq-q').forEach(function(btn) {
     btn.addEventListener('click', function() {
