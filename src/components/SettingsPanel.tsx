@@ -95,18 +95,6 @@ export function SettingsPanel({ projectId, settings, design, frameCount, onClose
           >
             <DesignFilesBody projectId={projectId} />
           </Item>
-
-          <Item
-            open={!!open.danger}
-            onToggle={() => toggle('danger')}
-            icon={<WarnIcon />}
-            iconBg="#fff4f4"
-            iconColor="#c33"
-            name="Danger zone"
-            summary="Rename · Archive · Delete"
-          >
-            <DangerBody />
-          </Item>
         </Scope>
       </div>
 
@@ -279,17 +267,6 @@ function AgentBody({
         )}
       </Row>
 
-      <Row label="Auth">
-        <span style={dotStyle('#3a3')} />
-        <span style={authTextStyle}>jsembasta@gmail.com</span>
-        <button style={ghostBtnStyle(true)} disabled title="Coming soon">Sign out</button>
-      </Row>
-
-      <Row label="Allowed tools">
-        <span style={authTextStyle}>per-session</span>
-        <span style={authTextStyle} title="Coming soon">Manage</span>
-      </Row>
-
       <Row label="Debug logs">
         <Toggle
           checked={global.agent.debugAcp}
@@ -454,22 +431,6 @@ function DesignFilesBody({ projectId }: { projectId: string }) {
   )
 }
 
-function DangerBody() {
-  return (
-    <>
-      <Row label="Rename">
-        <button style={ghostBtnStyle(true)} disabled>Coming soon</button>
-      </Row>
-      <Row label="Archive">
-        <button style={ghostBtnStyle(true)} disabled>Coming soon</button>
-      </Row>
-      <Row label="Delete">
-        <button style={dangerBtnStyle(true)} disabled>Coming soon</button>
-      </Row>
-    </>
-  )
-}
-
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={rowStyle}>
@@ -559,15 +520,6 @@ function FileIcon() {
     </svg>
   )
 }
-function WarnIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 19 L12 4 L21 19 Z" />
-      <path d="M12 10 V14 M12 17 V17.01" />
-    </svg>
-  )
-}
-
 // ── styles ──────────────────────────────────────────────────────────────
 
 const panelStyle: React.CSSProperties = {
@@ -835,16 +787,6 @@ const ghostBtnStyle = (disabled: boolean): React.CSSProperties => ({
   borderRadius: 3,
   cursor: disabled ? 'not-allowed' : 'pointer',
   color: disabled ? '#bbb' : '#444',
-  fontFamily: 'inherit',
-})
-const dangerBtnStyle = (disabled: boolean): React.CSSProperties => ({
-  padding: '3px 8px',
-  fontSize: 11,
-  background: '#fff',
-  border: '1px solid #f3c0c0',
-  borderRadius: 3,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  color: disabled ? '#e3a8a8' : '#c33',
   fontFamily: 'inherit',
 })
 const footerStyle: React.CSSProperties = {
